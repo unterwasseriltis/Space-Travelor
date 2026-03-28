@@ -12,6 +12,15 @@ import type { ElementKey, GameAction, GameState } from '@/features/solar-voyage/
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
+    case 'state/restored':
+      return {
+        ...action.state,
+        notification:
+          action.source === 'import'
+            ? 'Save imported successfully.'
+            : 'Autosave restored successfully.',
+      };
+
     case 'mission/started':
       return {
         ...createInitialGameState(),
@@ -71,8 +80,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       const remainingSeconds = Math.max(0, state.travel.remainingSeconds - 1);
-      const progress = (state.travel.totalSeconds - remainingSeconds) / state.travel.totalSeconds;
-      const nextRewards = calculateTravelRewards(state.travel.distanceKm, progress);
+      const elapsedSeconds = state.travel.totalSeconds - remainingSeconds;
+      const nextRewards = calculateTravelRewards(elapsedSeconds);
 
       const updatedResources = { ...state.resources };
       const nextEarnedResources = { ...state.travel.earnedResources };

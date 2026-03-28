@@ -1,7 +1,13 @@
-import { useEffect, useReducer } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
 
 import { gameReducer } from '@/features/solar-voyage/model/game-reducer';
+import {
+  deserializeGameStateSnapshot,
+  loadStoredGameState,
+  saveGameStateSnapshot,
+  serializeGameStateSnapshot,
+} from '@/features/solar-voyage/model/game-persistence';
 import { createInitialGameState } from '@/features/solar-voyage/model/game-state';
 import {
   getAvailableDestinations,
@@ -15,6 +21,12 @@ import {
 export function useSolarVoyage() {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);
   const isTraveling = Boolean(state.travel);
+  const hasSavedMission = state.phase === 'mission' || loadStoredGameState() !== null;
+  const latestStateRef = useRef(state);
+
+  useEffect(() => {
+    latestStateRef.current = state;
+  }, [state]);
 
   useEffect(() => {
     if (state.phase !== 'mission') {
@@ -44,8 +56,57 @@ export function useSolarVoyage() {
     };
   }, [isTraveling]);
 
+  useEffect(() => {
+    if (state.phase !== 'mission') {
+      return undefined;
+    }
+
+    saveGameStateSnapshot(latestStateRef.current);
+
+    const handlePageHide = () => {
+      saveGameStateSnapshot(latestStateRef.current);
+    };
+
+    window.addEventListener('pagehide', handlePageHide);
+
+    return () => {
+      window.removeEventListener('pagehide', handlePageHide);
+    };
+  }, [state.phase]);
+
+  useEffect(() => {
+    if (
+      state.phase !== 'mission' ||
+      state.missionElapsedSeconds === 0 ||
+      state.missionElapsedSeconds % 5 !== 0
+    ) {
+      return;
+    }
+
+    saveGameStateSnapshot(state);
+  }, [state]);
+
+  const restoreState = (source: 'autosave' | 'import', rawSnapshot: string) => {
+    const restoredState = deserializeGameStateSnapshot(rawSnapshot);
+
+    saveGameStateSnapshot(restoredState);
+    dispatch({ type: 'state/restored', source, state: restoredState });
+  };
+
+  const loadSavedMission = () => {
+    const restoredState = loadStoredGameState();
+
+    if (!restoredState) {
+      return false;
+    }
+
+    dispatch({ type: 'state/restored', source: 'autosave', state: restoredState });
+    return true;
+  };
+
   return {
     state,
+    hasSavedMission,
     availableDestinations: getAvailableDestinations(state.currentLocation),
     coordinatesLabel: getCurrentCoordinatesLabel(state),
     missionTimerLabel: getMissionTimerLabel(state),
@@ -57,5 +118,8 @@ export function useSolarVoyage() {
       dispatch({ type: 'destination/selected', destination }),
     startTravel: () => dispatch({ type: 'travel/started' }),
     clearNotification: () => dispatch({ type: 'notification/cleared' }),
+    exportSnapshot: () => serializeGameStateSnapshot(state),
+    importSnapshot: (rawSnapshot: string) => restoreState('import', rawSnapshot),
+    loadSavedMission,
   };
 }

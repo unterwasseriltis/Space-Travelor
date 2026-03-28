@@ -40,6 +40,24 @@ describe('gameReducer integration', () => {
     expect(state.selectedDestination).toBe('Erde');
   });
 
+  it('awards the same resources for the same number of travel seconds across routes', () => {
+    const travelForSeconds = (destination: 'Mars' | 'Uranus', seconds: number) => {
+      let state = createInitialGameState();
+
+      state = gameReducer(state, { type: 'mission/started' });
+      state = gameReducer(state, { type: 'destination/selected', destination });
+      state = gameReducer(state, { type: 'travel/started' });
+
+      for (let tick = 0; tick < seconds; tick += 1) {
+        state = gameReducer(state, { type: 'travel/ticked' });
+      }
+
+      return state.resources;
+    };
+
+    expect(travelForSeconds('Mars', 120)).toEqual(travelForSeconds('Uranus', 120));
+  });
+
   it('clears notifications without mutating the rest of the state', () => {
     const initialState = createInitialGameState();
     const stateWithNotification = {
@@ -50,6 +68,26 @@ describe('gameReducer integration', () => {
     expect(gameReducer(stateWithNotification, { type: 'notification/cleared' })).toEqual({
       ...initialState,
       notification: null,
+    });
+  });
+
+  it('restores imported state and replaces the notification with import feedback', () => {
+    const importedState = {
+      ...createInitialGameState(),
+      missionElapsedSeconds: 18,
+      notification: null,
+      phase: 'mission' as const,
+    };
+
+    expect(
+      gameReducer(createInitialGameState(), {
+        type: 'state/restored',
+        source: 'import',
+        state: importedState,
+      }),
+    ).toEqual({
+      ...importedState,
+      notification: 'Save imported successfully.',
     });
   });
 });

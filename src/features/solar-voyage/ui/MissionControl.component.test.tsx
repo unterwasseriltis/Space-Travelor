@@ -1,9 +1,21 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import {
+  deserializeGameStateSnapshot,
+  serializeGameStateSnapshot,
+  GAME_STATE_STORAGE_KEY,
+} from '@/features/solar-voyage/model/game-persistence';
+import { createInitialGameState } from '@/features/solar-voyage/model/game-state';
 import { MissionControl } from '@/features/solar-voyage/ui/MissionControl';
 
 describe('MissionControl component', () => {
+  afterEach(() => {
+    localStorage.clear();
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
   it('starts a mission and shows navigation controls', async () => {
     const user = userEvent.setup();
 
@@ -47,4 +59,104 @@ describe('MissionControl component', () => {
     expect(screen.getByTestId('minimap-zoom-value')).toHaveTextContent('25000%');
     expect(marsMarker.style.left).not.toBe(initialMarsLeft);
   });
+
+  it('loads an autosaved mission from local storage', async () => {
+    const user = userEvent.setup();
+    const savedState = {
+      ...createInitialGameState(),
+      missionElapsedSeconds: 42,
+      phase: 'mission' as const,
+    };
+
+    localStorage.setItem(GAME_STATE_STORAGE_KEY, serializeGameStateSnapshot(savedState));
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    await user.click(screen.getByRole('button', { name: /load mission/i }));
+
+    expect(screen.getByText(/navigation/i)).toBeInTheDocument();
+    expect(screen.getByText('00:00:42')).toBeInTheDocument();
+  });
+
+  it('exports the current mission snapshot from the settings dialog', async () => {
+    const user = userEvent.setup();
+    const clipboardWriteText = vi.fn().mockResolvedValue(undefined);
+    const createObjectURL = vi.fn(() => 'blob:save-file');
+    const revokeObjectURL = vi.fn();
+    const anchorClick = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: clipboardWriteText },
+    });
+    vi.spyOn(window.URL, 'createObjectURL').mockImplementation(createObjectURL);
+    vi.spyOn(window.URL, 'revokeObjectURL').mockImplementation(revokeObjectURL);
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    await user.click(screen.getByRole('button', { name: /new mission/i }));
+    await user.click(screen.getByRole('button', { name: /open settings/i }));
+    await user.click(screen.getByRole('button', { name: /^export$/i }));
+
+    await waitFor(() => {
+      expect(clipboardWriteText).toHaveBeenCalledWith(
+        expect.stringContaining('"phase": "mission"'),
+      );
+    });
+
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledTimes(1);
+    expect(anchorClick).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByText(/current snapshot copied to the clipboard and downloaded as json/i),
+    ).toBeInTheDocument();
+  });
+
+  it('imports a save file from the settings dialog', async () => {
+    const user = userEvent.setup();
+    const importedState = {
+      ...createInitialGameState(),
+      missionElapsedSeconds: 7,
+      phase: 'mission' as const,
+    };
+    const saveFile = new File([serializeGameStateSnapshot(importedState)], 'mission-save.json', {
+      type: 'application/json',
+    });
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    await user.click(screen.getByRole('button', { name: /open settings/i }));
+    await user.upload(screen.getByLabelText(/import save file/i), saveFile);
+
+    expect(screen.getByText(/navigation/i)).toBeInTheDocument();
+    expect(screen.getByText('00:00:07')).toBeInTheDocument();
+    expect(screen.getByText(/imported "mission-save\.json" successfully\./i)).toBeInTheDocument();
+  });
+
+  it('autosaves the active mission every 5 seconds', async () => {
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /new mission/i }));
+
+    expect(screen.getByText('00:00:00')).toBeInTheDocument();
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('00:00:06')).toBeInTheDocument();
+      },
+      { timeout: 7000 },
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const savedSnapshot = localStorage.getItem(GAME_STATE_STORAGE_KEY);
+    const restoredSnapshot = deserializeGameStateSnapshot(savedSnapshot ?? '');
+
+    expect(savedSnapshot).toBeTruthy();
+    expect(restoredSnapshot.missionElapsedSeconds).toBeGreaterThanOrEqual(5);
+  }, 10000);
 });

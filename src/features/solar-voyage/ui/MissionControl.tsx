@@ -1,5 +1,20 @@
-import { useEffect, useEffectEvent, useState, type ChangeEvent, type WheelEvent } from 'react';
-import { MinusIcon, PlusIcon, RotateCcwIcon } from 'lucide-react';
+import {
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type WheelEvent,
+} from 'react';
+import {
+  DownloadIcon,
+  MinusIcon,
+  PlusIcon,
+  RotateCcwIcon,
+  SettingsIcon,
+  UploadIcon,
+  XIcon,
+} from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -47,6 +62,7 @@ const MINIMAP_ZOOM_STEP_FACTOR = 1.25;
 export function MissionControl({ backgroundImage }: MissionControlProps) {
   const {
     state,
+    hasSavedMission,
     availableDestinations,
     coordinatesLabel,
     missionTimerLabel,
@@ -57,9 +73,15 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
     selectDestination,
     startTravel,
     clearNotification,
+    exportSnapshot,
+    importSnapshot,
+    loadSavedMission,
   } = useSolarVoyage();
   const clearNotificationEvent = useEffectEvent(clearNotification);
   const missionViewportLayout = useMissionViewportLayout();
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!state.notification) {
@@ -75,6 +97,76 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
     };
   }, [state.notification]);
 
+  useEffect(() => {
+    if (!isSettingsOpen) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsSettingsOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isSettingsOpen]);
+
+  const handleExport = async () => {
+    try {
+      const snapshot = exportSnapshot();
+      const fileName = createSaveFileName();
+      const blob = new Blob([snapshot], { type: 'application/json' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const downloadLink = document.createElement('a');
+
+      downloadLink.href = downloadUrl;
+      downloadLink.download = fileName;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      downloadLink.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(snapshot);
+        setSettingsMessage('Current snapshot copied to the clipboard and downloaded as JSON.');
+        return;
+      }
+
+      setSettingsMessage('Current snapshot downloaded as JSON.');
+    } catch {
+      setSettingsMessage('Export failed. Please try again.');
+    }
+  };
+
+  const handleImportButtonClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const importFile = event.target.files?.[0];
+
+    if (!importFile) {
+      return;
+    }
+
+    try {
+      const snapshot = await importFile.text();
+
+      importSnapshot(snapshot);
+      setSettingsMessage(`Imported "${importFile.name}" successfully.`);
+    } catch (error) {
+      setSettingsMessage(
+        error instanceof Error ? error.message : 'Import failed. Please try another save file.',
+      );
+    } finally {
+      event.target.value = '';
+    }
+  };
+
   if (state.phase === 'menu') {
     return (
       <main className="relative min-h-screen w-full overflow-hidden bg-[#030611]">
@@ -85,6 +177,30 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,6,17,0.92)_0%,rgba(3,6,17,0.6)_42%,rgba(3,6,17,0.1)_100%)]" />
 
         <div className="starfield fixed inset-0 opacity-40" />
+        <SettingsButton onClick={() => setIsSettingsOpen((currentOpen) => !currentOpen)} />
+        <SettingsDialog
+          isOpen={isSettingsOpen}
+          canExport={false}
+          message={settingsMessage}
+          onClose={() => setIsSettingsOpen(false)}
+          onExport={() => {
+            void handleExport();
+          }}
+          onImport={handleImportButtonClick}
+        >
+          Import a save file from disk. Autosaves are written to local storage every 5 seconds
+          during a mission.
+        </SettingsDialog>
+        <input
+          ref={importInputRef}
+          accept=".json,application/json,text/plain"
+          aria-label="Import save file"
+          className="sr-only"
+          onChange={(event) => {
+            void handleImportChange(event);
+          }}
+          type="file"
+        />
 
         <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl items-center px-6 py-10 md:px-10">
           <div className="grid w-full items-center gap-10 xl:grid-cols-[minmax(0,740px)_1fr]">
@@ -114,7 +230,8 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
                 <Button
                   className="h-14 text-lg tracking-[0.2em] uppercase"
                   variant="secondary"
-                  disabled
+                  disabled={!hasSavedMission}
+                  onClick={loadSavedMission}
                 >
                   Load Mission
                 </Button>
@@ -147,6 +264,30 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       />
       <div className="fixed inset-0 bg-[linear-gradient(180deg,rgba(3,6,17,0.3)_0%,rgba(3,6,17,0.7)_100%)]" />
       <div className="starfield fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(4,7,17,0.08),rgba(4,7,17,0.35))]" />
+      <SettingsButton onClick={() => setIsSettingsOpen((currentOpen) => !currentOpen)} />
+      <SettingsDialog
+        isOpen={isSettingsOpen}
+        canExport
+        message={settingsMessage}
+        onClose={() => setIsSettingsOpen(false)}
+        onExport={() => {
+          void handleExport();
+        }}
+        onImport={handleImportButtonClick}
+      >
+        Export a live snapshot of the current mission or import a JSON save file. Autosave keeps
+        local storage in sync every 5 seconds.
+      </SettingsDialog>
+      <input
+        ref={importInputRef}
+        accept=".json,application/json,text/plain"
+        aria-label="Import save file"
+        className="sr-only"
+        onChange={(event) => {
+          void handleImportChange(event);
+        }}
+        type="file"
+      />
 
       <div
         className="absolute top-1/2 left-1/2 z-10"
@@ -234,6 +375,110 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
         </div>
       </div>
     </main>
+  );
+}
+
+function createSaveFileName() {
+  return `solar-voyage-save-${new Date().toISOString().replaceAll(':', '-')}.json`;
+}
+
+function SettingsButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button
+      aria-label="Open settings"
+      className="fixed top-6 right-6 z-40 size-12 rounded-full border border-white/10 bg-slate-950/75 shadow-[0_0_25px_rgba(3,6,17,0.4)] backdrop-blur-md hover:bg-slate-900/90"
+      onClick={onClick}
+      size="icon-lg"
+      type="button"
+      variant="outline"
+    >
+      <SettingsIcon className="text-primary size-5" />
+    </Button>
+  );
+}
+
+function SettingsDialog({
+  canExport,
+  children,
+  isOpen,
+  message,
+  onClose,
+  onExport,
+  onImport,
+}: {
+  canExport: boolean;
+  children: string;
+  isOpen: boolean;
+  message: string | null;
+  onClose: () => void;
+  onExport: () => void;
+  onImport: () => void;
+}) {
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    <div
+      aria-modal="true"
+      className="fixed inset-0 z-30 flex items-start justify-end bg-black/45 px-4 py-20 backdrop-blur-sm"
+      role="dialog"
+    >
+      <div className="glass-panel hud-outline w-full max-w-sm rounded-[2rem] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-primary text-xs font-bold tracking-[0.32em] uppercase">Data Link</p>
+            <h2 className="mt-2 font-[family-name:var(--font-display)] text-2xl tracking-[0.16em] text-white uppercase">
+              Save Controls
+            </h2>
+          </div>
+          <Button
+            aria-label="Close settings"
+            onClick={onClose}
+            size="icon-sm"
+            type="button"
+            variant="ghost"
+          >
+            <XIcon />
+          </Button>
+        </div>
+
+        <p className="text-sm leading-6 text-slate-300">{children}</p>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <Button
+            className="h-12 w-full justify-center gap-2 tracking-[0.18em] uppercase"
+            disabled={!canExport}
+            onClick={onExport}
+            type="button"
+          >
+            <DownloadIcon />
+            Export
+          </Button>
+          <Button
+            className="h-12 w-full justify-center gap-2 tracking-[0.18em] uppercase"
+            onClick={onImport}
+            type="button"
+            variant="secondary"
+          >
+            <UploadIcon />
+            Import
+          </Button>
+        </div>
+
+        {message ? (
+          <p className="border-border bg-muted/45 mt-4 rounded-2xl border px-4 py-3 text-sm text-slate-200">
+            {message}
+          </p>
+        ) : null}
+
+        {!canExport ? (
+          <p className="mt-4 text-xs tracking-[0.12em] text-slate-500 uppercase">
+            Export unlocks after a mission has been loaded.
+          </p>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -585,15 +830,17 @@ function ResourcePanel({
         </CardTitle>
         <CardDescription>Collected mission materials. 14 elements tracked.</CardDescription>
       </CardHeader>
-      <CardContent className="grid min-h-0 grow auto-rows-fr grid-cols-3 gap-2 overflow-y-auto pr-1">
+      <CardContent className="grid min-h-0 grow auto-rows-[80px] grid-cols-3 content-start gap-2 overflow-y-auto pr-1">
         {Object.entries(ELEMENTS).map(([key, element]) => (
           <div
             key={key}
-            className="border-border bg-muted/30 hover:bg-muted/50 flex min-h-[74px] flex-col items-center justify-center rounded-xl border px-2 py-1 text-center transition-colors"
+            className="border-border bg-muted/30 hover:bg-muted/50 flex h-full min-h-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border px-2 py-2 text-center transition-colors"
           >
-            <p className="text-accent text-xs font-bold">{element.symbol}</p>
-            <p className="text-2xl font-black text-white">{resources[key as ElementKey]}</p>
-            <p className="mt-1 truncate text-[8px] tracking-[0.1em] text-slate-400 uppercase">
+            <p className="text-accent text-[11px] leading-none font-bold">{element.symbol}</p>
+            <p className="text-xl leading-none font-black text-white tabular-nums">
+              {resources[key as ElementKey]}
+            </p>
+            <p className="w-full truncate text-[8px] leading-none tracking-[0.1em] text-slate-400 uppercase">
               {element.name}
             </p>
           </div>

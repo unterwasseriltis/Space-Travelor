@@ -54,4 +54,5 @@ export type GameAction =
   | { type: 'destination/selected'; destination: BodyName | '' }
   | { type: 'travel/started' }
   | { type: 'travel/ticked' }
-  | { type: 'notification/cleared' };
+  | { type: 'notification/cleared' }
+  | { type: 'state/restored'; source: 'autosave' | 'import'; state: GameState };
