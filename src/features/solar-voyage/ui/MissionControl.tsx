@@ -1,4 +1,5 @@
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useEffect, useEffectEvent, useState, type ChangeEvent, type WheelEvent } from 'react';
+import { MinusIcon, PlusIcon, RotateCcwIcon } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,13 @@ const MISSION_VIEWPORT = {
   height: 920,
   width: 1500,
 } as const;
+
+const MINIMAP_BASE_PIXELS_PER_AU = 12;
+const MINIMAP_DEFAULT_ZOOM = 1;
+const MINIMAP_MAX_ZOOM = 250;
+const MINIMAP_MIN_ZOOM = 0.1;
+const MINIMAP_ZOOM_SLIDER_MAX = 100;
+const MINIMAP_ZOOM_STEP_FACTOR = 1.25;
 
 export function MissionControl({ backgroundImage }: MissionControlProps) {
   const {
@@ -290,6 +298,23 @@ function MapPanel({
   currentLocation: keyof typeof celestialBodies;
   currentPosition: { x: number; y: number };
 }) {
+  const [zoom, setZoom] = useState(MINIMAP_DEFAULT_ZOOM);
+  const zoomLabel = `${Math.round(zoom * 100)}%`;
+  const zoomSliderValue = getMinimapZoomSliderValue(zoom);
+
+  const adjustZoom = (factor: number) => {
+    setZoom((currentZoom) => clampMinimapZoom(currentZoom * factor));
+  };
+
+  const handleZoomChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setZoom(getMinimapZoomFromSliderValue(Number(event.target.value)));
+  };
+
+  const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    adjustZoom(event.deltaY < 0 ? MINIMAP_ZOOM_STEP_FACTOR : 1 / MINIMAP_ZOOM_STEP_FACTOR);
+  };
+
   return (
     <div
       className={cn(
@@ -297,19 +322,25 @@ function MapPanel({
         className,
       )}
     >
-      <span className="text-primary text-[10px] font-bold tracking-[0.3em] uppercase">
-        Sonnensystem (2D)
-      </span>
-      <div className="border-primary/25 relative size-48 rounded-full border bg-[radial-gradient(circle_at_center,#09213f_0%,#02050d_72%)]">
-        <div className="absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-300 shadow-[0_0_20px_rgba(255,209,102,0.65)]" />
+      <div className="flex w-full items-center justify-between gap-3 text-[10px] font-bold tracking-[0.3em] uppercase">
+        <span className="text-primary">Sonnensystem (2D)</span>
+        <span className="text-slate-400">Ship lock</span>
+      </div>
+      <div
+        className="border-primary/25 relative size-48 overflow-hidden rounded-full border bg-[radial-gradient(circle_at_center,#09213f_0%,#02050d_72%)]"
+        onWheel={handleWheel}
+      >
+        <div
+          aria-label="Sun position"
+          className="absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-300 shadow-[0_0_20px_rgba(255,209,102,0.65)]"
+          style={getMinimapMarkerStyle({ x: 0, y: 0 }, currentPosition, zoom)}
+        />
         {Object.entries(celestialBodies).map(([name, body]) => (
           <div
             key={name}
             className="absolute"
-            style={{
-              left: `calc(50% + ${body.x * 6}px)`,
-              top: `calc(50% + ${body.y * 6}px)`,
-            }}
+            data-testid={`minimap-body-${name}`}
+            style={getMinimapMarkerStyle(body, currentPosition, zoom)}
           >
             <div
               className={cn(
@@ -324,15 +355,99 @@ function MapPanel({
           </div>
         ))}
         <div
+          aria-label="Ship position"
           className="border-primary bg-primary/20 absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border shadow-[0_0_15px_rgba(107,243,255,0.65)]"
-          style={{
-            left: `calc(50% + ${currentPosition.x * 6}px)`,
-            top: `calc(50% + ${currentPosition.y * 6}px)`,
-          }}
+          data-testid="minimap-ship"
+          style={{ left: '50%', top: '50%' }}
         />
       </div>
+      <div className="flex w-full items-center gap-2">
+        <Button
+          aria-label="Zoom out minimap"
+          onClick={() => adjustZoom(1 / MINIMAP_ZOOM_STEP_FACTOR)}
+          size="icon-xs"
+          type="button"
+          variant="outline"
+        >
+          <MinusIcon />
+        </Button>
+        <label className="flex min-w-0 flex-1 items-center gap-3 text-[10px] tracking-[0.18em] text-slate-300 uppercase">
+          <span className="shrink-0">Zoom</span>
+          <input
+            aria-label="Minimap zoom"
+            aria-valuetext={zoomLabel}
+            className="accent-primary h-1 w-full cursor-pointer"
+            max={MINIMAP_ZOOM_SLIDER_MAX}
+            min={0}
+            onChange={handleZoomChange}
+            step={1}
+            type="range"
+            value={zoomSliderValue}
+          />
+        </label>
+        <span
+          className="w-16 text-right text-[10px] font-bold tracking-[0.18em] text-slate-300 uppercase"
+          data-testid="minimap-zoom-value"
+        >
+          {zoomLabel}
+        </span>
+        <Button
+          aria-label="Reset minimap zoom"
+          onClick={() => setZoom(MINIMAP_DEFAULT_ZOOM)}
+          size="icon-xs"
+          type="button"
+          variant="outline"
+        >
+          <RotateCcwIcon />
+        </Button>
+        <Button
+          aria-label="Zoom in minimap"
+          onClick={() => adjustZoom(MINIMAP_ZOOM_STEP_FACTOR)}
+          size="icon-xs"
+          type="button"
+          variant="outline"
+        >
+          <PlusIcon />
+        </Button>
+      </div>
+      <p className="text-[10px] tracking-[0.18em] text-slate-500 uppercase">
+        Log zoom tuned for AU-scale distances.
+      </p>
     </div>
   );
+}
+
+function clampMinimapZoom(zoom: number) {
+  return Math.min(Math.max(zoom, MINIMAP_MIN_ZOOM), MINIMAP_MAX_ZOOM);
+}
+
+function getMinimapZoomFromSliderValue(sliderValue: number) {
+  const progress = Math.min(Math.max(sliderValue / MINIMAP_ZOOM_SLIDER_MAX, 0), 1);
+  return clampMinimapZoom(
+    MINIMAP_MIN_ZOOM * Math.pow(MINIMAP_MAX_ZOOM / MINIMAP_MIN_ZOOM, progress),
+  );
+}
+
+function getMinimapZoomSliderValue(zoom: number) {
+  return (
+    (Math.log(clampMinimapZoom(zoom) / MINIMAP_MIN_ZOOM) /
+      Math.log(MINIMAP_MAX_ZOOM / MINIMAP_MIN_ZOOM)) *
+    MINIMAP_ZOOM_SLIDER_MAX
+  );
+}
+
+function getMinimapMarkerStyle(
+  target: { x: number; y: number },
+  currentPosition: { x: number; y: number },
+  zoom: number,
+) {
+  const offsetX = (target.x - currentPosition.x) * MINIMAP_BASE_PIXELS_PER_AU * zoom;
+  const offsetY = (target.y - currentPosition.y) * MINIMAP_BASE_PIXELS_PER_AU * zoom;
+
+  return {
+    left: `calc(50% + ${offsetX}px)`,
+    top: `calc(50% + ${offsetY}px)`,
+  };
 }
 
 function StatusBar({
