@@ -40,6 +40,24 @@ describe('gameReducer integration', () => {
     expect(state.selectedDestination).toBe('Erde');
   });
 
+  it('awards the same resources for the same number of travel seconds across routes', () => {
+    const travelForSeconds = (destination: 'Mars' | 'Uranus', seconds: number) => {
+      let state = createInitialGameState();
+
+      state = gameReducer(state, { type: 'mission/started' });
+      state = gameReducer(state, { type: 'destination/selected', destination });
+      state = gameReducer(state, { type: 'travel/started' });
+
+      for (let tick = 0; tick < seconds; tick += 1) {
+        state = gameReducer(state, { type: 'travel/ticked' });
+      }
+
+      return state.resources;
+    };
+
+    expect(travelForSeconds('Mars', 120)).toEqual(travelForSeconds('Uranus', 120));
+  });
+
   it('clears notifications without mutating the rest of the state', () => {
     const initialState = createInitialGameState();
     const stateWithNotification = {
