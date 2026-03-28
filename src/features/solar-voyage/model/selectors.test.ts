@@ -5,9 +5,12 @@ import {
 } from '@/features/solar-voyage/model/game-state';
 import {
   getAvailableDestinations,
+  getAvailableInventorySlots,
+  getAllowedElementsForSlot,
   getCurrentCoordinatesLabel,
   getCurrentPosition,
   getMissionTimerLabel,
+  getShipBonuses,
   getTravelCountdownLabel,
   getTravelProgress,
 } from '@/features/solar-voyage/model/selectors';
@@ -59,5 +62,42 @@ describe('selectors', () => {
 
     expect(getTravelCountdownLabel(state)).toBeNull();
     expect(getTravelProgress(state)).toBe(0);
+  });
+
+  it('aggregates ship bonuses and inventory capacity from installed modules', () => {
+    const state: GameState = {
+      ...createInitialGameState(),
+      equipmentSlots: createInitialGameState().equipmentSlots.map((slot) => {
+        if (slot.id === 'propulsion-alpha') {
+          return { ...slot, installedElement: 'hydrogen' };
+        }
+
+        if (slot.id === 'systems-alpha') {
+          return { ...slot, installedElement: 'silicon' };
+        }
+
+        if (slot.id === 'structure-alpha') {
+          return { ...slot, installedElement: 'carbon' };
+        }
+
+        return slot;
+      }),
+    };
+
+    expect(getShipBonuses(state)).toMatchObject({
+      inventoryBonusSlots: 2,
+      rareRewardPct: 10,
+      travelDurationPct: 13,
+    });
+    expect(getAvailableInventorySlots(state)).toBe(11);
+  });
+
+  it('returns allowed elements for a slot type', () => {
+    expect(getAllowedElementsForSlot('reactor')).toEqual([
+      'helium',
+      'lithium',
+      'sodium',
+      'nitrogen',
+    ]);
   });
 });

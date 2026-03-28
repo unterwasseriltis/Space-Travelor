@@ -6,6 +6,7 @@ import {
   formatCountdown,
   formatDuration,
 } from '@/features/solar-voyage/domain/travel';
+import { createEmptyBonuses } from '@/features/solar-voyage/model/equipment';
 
 describe('travel domain', () => {
   it('calculates at least one minute of travel time', () => {
@@ -56,5 +57,23 @@ describe('travel domain', () => {
 
   it('formats negative mission time as zeroed duration', () => {
     expect(formatDuration(-10)).toBe('00:00:00');
+  });
+
+  it('applies travel bonuses for duration, rewards, and passive regeneration deterministically', () => {
+    const bonuses = createEmptyBonuses();
+    bonuses.travelDurationPct = 13;
+    bonuses.hydrogenRewardPct = 15;
+    bonuses.rareRewardPct = 22;
+    bonuses.hydrogenPerTick = 1 / 15;
+    bonuses.heliumPerTick = 1 / 30;
+    bonuses.launchHydrogenBonus = 1;
+
+    expect(calculateTravelDurationSeconds('Erde', 'Mond', bonuses.travelDurationPct)).toBe(52);
+    expect(calculateTravelRewards(30, bonuses)).toMatchObject({
+      helium: 26,
+      hydrogen: 37,
+      silicon: 1,
+    });
+    expect(calculateHydrogenReward(30, bonuses)).toBe(37);
   });
 });

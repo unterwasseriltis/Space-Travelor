@@ -1,8 +1,10 @@
 import { celestialBodies } from '@/features/solar-voyage/domain/solar-system';
 import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
+import { createInitialEquipmentSlots } from '@/features/solar-voyage/model/equipment';
 import { ELEMENTS } from '@/features/solar-voyage/model/types';
 import type {
   ElementKey,
+  EquipmentSlotState,
   GamePhase,
   GameState,
   ResourceState,
@@ -11,7 +13,7 @@ import type {
 } from '@/features/solar-voyage/model/types';
 
 export const GAME_STATE_STORAGE_KEY = 'space-travelor.game-state.v1';
-const GAME_STATE_SNAPSHOT_VERSION = 1;
+const GAME_STATE_SNAPSHOT_VERSION = 2;
 
 type GameStateSnapshot = {
   version: typeof GAME_STATE_SNAPSHOT_VERSION;
@@ -86,7 +88,7 @@ function validateGameStateSnapshot(snapshot: unknown): GameState {
   const snapshotRecord = getRecord(snapshot, 'Save data is not an object.');
 
   if ('version' in snapshotRecord) {
-    if (snapshotRecord.version !== GAME_STATE_SNAPSHOT_VERSION) {
+    if (snapshotRecord.version !== 1 && snapshotRecord.version !== GAME_STATE_SNAPSHOT_VERSION) {
       throw new Error('Save data version is not supported.');
     }
   }
@@ -110,6 +112,7 @@ function validateGameState(gameState: unknown): GameState {
   );
   const ship = validateShipState(stateRecord.ship);
   const resources = validateResourceState(stateRecord.resources, 'Resource totals are invalid.');
+  const equipmentSlots = validateEquipmentSlots(stateRecord.equipmentSlots);
   const travel = validateTravelState(stateRecord.travel);
   const notification = validateNotification(stateRecord.notification);
 
@@ -124,6 +127,7 @@ function validateGameState(gameState: unknown): GameState {
     selectedDestination,
     ship,
     resources,
+    equipmentSlots,
     travel,
     notification,
   };
@@ -176,6 +180,43 @@ function validateResourceState(value: unknown, errorMessage: string): ResourceSt
   return resources;
 }
 
+function validateEquipmentSlots(value: unknown): EquipmentSlotState[] {
+  if (typeof value === 'undefined') {
+    return createInitialEquipmentSlots();
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error('Equipment slots are invalid.');
+  }
+
+  const defaultSlots = createInitialEquipmentSlots();
+
+  if (value.length !== defaultSlots.length) {
+    throw new Error('Equipment slot count is invalid.');
+  }
+
+  return value.map((slotValue, index) => {
+    const defaultSlot = defaultSlots[index];
+    const slotRecord = getRecord(slotValue, 'Equipment slot is invalid.');
+
+    if (slotRecord.id !== defaultSlot.id || slotRecord.type !== defaultSlot.type) {
+      throw new Error('Equipment slot identity is invalid.');
+    }
+
+    if (typeof slotRecord.unlocked !== 'boolean') {
+      throw new Error('Equipment slot unlock state is invalid.');
+    }
+
+    const installedElement = validateInstalledElement(slotRecord.installedElement);
+
+    return {
+      ...defaultSlot,
+      unlocked: slotRecord.unlocked,
+      installedElement,
+    };
+  });
+}
+
 function validateTravelState(value: unknown): TravelState | null {
   if (value === null) {
     return null;
@@ -214,6 +255,18 @@ function validateNotification(value: unknown) {
   }
 
   throw new Error('Save notification is invalid.');
+}
+
+function validateInstalledElement(value: unknown): ElementKey | null {
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value === 'string' && value in ELEMENTS) {
+    return value as ElementKey;
+  }
+
+  throw new Error('Installed element is invalid.');
 }
 
 function validateWholeNumber(value: unknown, errorMessage: string) {

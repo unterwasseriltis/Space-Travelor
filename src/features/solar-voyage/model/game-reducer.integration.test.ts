@@ -1,5 +1,8 @@
 import { gameReducer } from '@/features/solar-voyage/model/game-reducer';
-import { createInitialGameState } from '@/features/solar-voyage/model/game-state';
+import {
+  createInitialGameState,
+  createInitialResources,
+} from '@/features/solar-voyage/model/game-state';
 
 describe('gameReducer integration', () => {
   it('ignores mission and travel ticks when those systems are inactive', () => {
@@ -89,5 +92,116 @@ describe('gameReducer integration', () => {
       ...importedState,
       notification: 'Save imported successfully.',
     });
+  });
+
+  it('installs equipment by consuming exactly one resource', () => {
+    let state = createInitialGameState();
+    state = {
+      ...state,
+      phase: 'mission',
+      resources: {
+        ...createInitialResources(),
+        hydrogen: 1,
+      },
+    };
+
+    state = gameReducer(state, {
+      type: 'equipment/installed',
+      element: 'hydrogen',
+      slotId: 'propulsion-alpha',
+    });
+
+    expect(state.resources.hydrogen).toBe(0);
+    expect(
+      state.equipmentSlots.find((slot) => slot.id === 'propulsion-alpha')?.installedElement,
+    ).toBe('hydrogen');
+  });
+
+  it('refuses incompatible element installs for specialized slots', () => {
+    let state = createInitialGameState();
+    state = {
+      ...state,
+      phase: 'mission',
+      resources: {
+        ...createInitialResources(),
+        carbon: 1,
+      },
+    };
+
+    state = gameReducer(state, {
+      type: 'equipment/installed',
+      element: 'carbon',
+      slotId: 'propulsion-alpha',
+    });
+
+    expect(state.resources.carbon).toBe(1);
+    expect(
+      state.equipmentSlots.find((slot) => slot.id === 'propulsion-alpha')?.installedElement,
+    ).toBeNull();
+  });
+
+  it('applies unlock discounts when expanding a bay', () => {
+    let state = createInitialGameState();
+    state = {
+      ...state,
+      phase: 'mission',
+      resources: {
+        ...createInitialResources(),
+        aluminium: 4,
+        boron: 1,
+        carbon: 6,
+      },
+    };
+
+    state = gameReducer(state, {
+      type: 'equipment/installed',
+      element: 'boron',
+      slotId: 'systems-alpha',
+    });
+    state = gameReducer(state, {
+      type: 'equipment/installed',
+      element: 'aluminium',
+      slotId: 'structure-alpha',
+    });
+    state = gameReducer(state, { type: 'equipment/unlocked', slotId: 'universal-beta' });
+
+    expect(state.resources.carbon).toBe(0);
+    expect(state.resources.aluminium).toBe(0);
+    expect(state.equipmentSlots.find((slot) => slot.id === 'universal-beta')?.unlocked).toBe(true);
+  });
+
+  it('uses installed modules for travel duration and launch bonuses', () => {
+    let state = createInitialGameState();
+    state = {
+      ...state,
+      phase: 'mission',
+      resources: {
+        ...createInitialResources(),
+        hydrogen: 1,
+        silicon: 1,
+        sodium: 1,
+      },
+    };
+
+    state = gameReducer(state, {
+      type: 'equipment/installed',
+      element: 'hydrogen',
+      slotId: 'propulsion-alpha',
+    });
+    state = gameReducer(state, {
+      type: 'equipment/installed',
+      element: 'silicon',
+      slotId: 'systems-alpha',
+    });
+    state = gameReducer(state, {
+      type: 'equipment/installed',
+      element: 'sodium',
+      slotId: 'reactor-alpha',
+    });
+    state = gameReducer(state, { type: 'destination/selected', destination: 'Mond' });
+    state = gameReducer(state, { type: 'travel/started' });
+
+    expect(state.travel?.totalSeconds).toBe(52);
+    expect(state.resources.hydrogen).toBe(1);
   });
 });

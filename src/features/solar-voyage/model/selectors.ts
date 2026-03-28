@@ -4,7 +4,12 @@ import {
   interpolateCoordinates,
 } from '@/features/solar-voyage/domain/solar-system';
 import { formatCountdown, formatDuration } from '@/features/solar-voyage/domain/travel';
-import type { GameState } from '@/features/solar-voyage/model/types';
+import {
+  BASE_INVENTORY_SLOTS,
+  getAllowedElementsForSlot as getAllowedElementsForSlotFromConfig,
+  getShipBonusesFromSlots,
+} from '@/features/solar-voyage/model/equipment';
+import type { EquipmentSlotType, GameState } from '@/features/solar-voyage/model/types';
 
 export function getAvailableDestinations(currentLocation: GameState['currentLocation']) {
   return Object.keys(celestialBodies).filter(
@@ -31,6 +36,18 @@ export function getCurrentCoordinatesLabel(state: GameState) {
 
 export function getMissionTimerLabel(state: GameState) {
   return formatDuration(state.missionElapsedSeconds);
+}
+
+export function getShipBonuses(state: GameState) {
+  return getShipBonusesFromSlots(state.equipmentSlots);
+}
+
+export function getAvailableInventorySlots(state: GameState) {
+  return BASE_INVENTORY_SLOTS + getShipBonuses(state).inventoryBonusSlots;
+}
+
+export function getAllowedElementsForSlot(slotType: EquipmentSlotType) {
+  return getAllowedElementsForSlotFromConfig(slotType);
 }
 
 export function getTravelCountdownLabel(state: GameState) {

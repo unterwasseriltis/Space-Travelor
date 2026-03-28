@@ -23,6 +23,30 @@ export type ElementKey = keyof typeof ELEMENTS;
 
 export type ResourceState = Record<ElementKey, number>;
 
+export type EquipmentSlotType = 'universal' | 'propulsion' | 'systems' | 'reactor' | 'structure';
+
+export type EquipmentSlotState = {
+  id: string;
+  type: EquipmentSlotType;
+  unlocked: boolean;
+  installedElement: ElementKey | null;
+  unlockCost: Partial<ResourceState> | null;
+};
+
+export type ShipBonuses = {
+  travelDurationPct: number;
+  hydrogenPerTick: number;
+  heliumPerTick: number;
+  oxygenPerTick: number;
+  totalRewardPct: number;
+  hydrogenRewardPct: number;
+  rareRewardPct: number;
+  unlockDiscountPct: number;
+  inventoryBonusSlots: number;
+  launchHydrogenBonus: number;
+  arrivalHydrogenBonus: number;
+};
+
 export type ShipState = {
   hull: number;
   shields: number;
@@ -44,6 +68,7 @@ export type GameState = {
   selectedDestination: BodyName | '';
   ship: ShipState;
   resources: ResourceState;
+  equipmentSlots: EquipmentSlotState[];
   travel: TravelState | null;
   notification: string | null;
 };
@@ -54,5 +79,8 @@ export type GameAction =
   | { type: 'destination/selected'; destination: BodyName | '' }
   | { type: 'travel/started' }
   | { type: 'travel/ticked' }
+  | { type: 'equipment/installed'; slotId: string; element: ElementKey }
+  | { type: 'equipment/removed'; slotId: string }
+  | { type: 'equipment/unlocked'; slotId: string }
   | { type: 'notification/cleared' }
   | { type: 'state/restored'; source: 'autosave' | 'import'; state: GameState };

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {
@@ -10,6 +10,21 @@ import { createInitialGameState } from '@/features/solar-voyage/model/game-state
 import { MissionControl } from '@/features/solar-voyage/ui/MissionControl';
 
 describe('MissionControl component', () => {
+  beforeAll(() => {
+    Object.defineProperty(HTMLElement.prototype, 'hasPointerCapture', {
+      configurable: true,
+      value: () => false,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', {
+      configurable: true,
+      value: vi.fn(),
+    });
+    Object.defineProperty(HTMLElement.prototype, 'releasePointerCapture', {
+      configurable: true,
+      value: vi.fn(),
+    });
+  });
+
   afterEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
@@ -159,4 +174,35 @@ describe('MissionControl component', () => {
     expect(savedSnapshot).toBeTruthy();
     expect(restoredSnapshot.missionElapsedSeconds).toBeGreaterThanOrEqual(5);
   }, 10000);
+
+  it('renders equipment bays and allows unlocking and installing modules through the UI', async () => {
+    const user = userEvent.setup();
+    const savedState = {
+      ...createInitialGameState(),
+      phase: 'mission' as const,
+      resources: {
+        ...createInitialGameState().resources,
+        aluminium: 4,
+        carbon: 8,
+        hydrogen: 1,
+      },
+    };
+
+    localStorage.setItem(GAME_STATE_STORAGE_KEY, serializeGameStateSnapshot(savedState));
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    await user.click(screen.getByRole('button', { name: /load mission/i }));
+
+    expect(screen.getByTestId('equipment-panel')).toBeInTheDocument();
+    expect(screen.getAllByTestId(/equipment-slot-/i)).toHaveLength(10);
+
+    const propulsionSlot = screen.getByTestId('equipment-slot-propulsion-alpha');
+    await user.click(within(propulsionSlot).getByRole('button', { name: /install wasserstoff/i }));
+    expect(within(propulsionSlot).getByText(/wasserstoff/i)).toBeInTheDocument();
+
+    const lockedSlot = screen.getByTestId('equipment-slot-universal-beta');
+    await user.click(within(lockedSlot).getByRole('button', { name: /unlock/i }));
+    expect(within(lockedSlot).getByText(/empty bay/i)).toBeInTheDocument();
+  });
 });

@@ -11,9 +11,11 @@ import {
 import { createInitialGameState } from '@/features/solar-voyage/model/game-state';
 import {
   getAvailableDestinations,
+  getAvailableInventorySlots,
   getCurrentCoordinatesLabel,
   getCurrentPosition,
   getMissionTimerLabel,
+  getShipBonuses,
   getTravelCountdownLabel,
   getTravelProgress,
 } from '@/features/solar-voyage/model/selectors';
@@ -110,6 +112,8 @@ export function useSolarVoyage() {
     availableDestinations: getAvailableDestinations(state.currentLocation),
     coordinatesLabel: getCurrentCoordinatesLabel(state),
     missionTimerLabel: getMissionTimerLabel(state),
+    shipBonuses: getShipBonuses(state),
+    availableInventorySlots: getAvailableInventorySlots(state),
     travelCountdownLabel: getTravelCountdownLabel(state),
     travelProgress: getTravelProgress(state),
     currentPosition: getCurrentPosition(state),
@@ -117,6 +121,10 @@ export function useSolarVoyage() {
     selectDestination: (destination: BodyName | '') =>
       dispatch({ type: 'destination/selected', destination }),
     startTravel: () => dispatch({ type: 'travel/started' }),
+    installEquipment: (slotId: string, element: keyof typeof state.resources) =>
+      dispatch({ type: 'equipment/installed', slotId, element }),
+    removeEquipment: (slotId: string) => dispatch({ type: 'equipment/removed', slotId }),
+    unlockEquipmentSlot: (slotId: string) => dispatch({ type: 'equipment/unlocked', slotId }),
     clearNotification: () => dispatch({ type: 'notification/cleared' }),
     exportSnapshot: () => serializeGameStateSnapshot(state),
     importSnapshot: (rawSnapshot: string) => restoreState('import', rawSnapshot),

@@ -31,9 +31,20 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { celestialBodies } from '@/features/solar-voyage/domain/solar-system';
 import { useSolarVoyage } from '@/features/solar-voyage/hooks/use-solar-voyage';
-import { inventoryItemLabels, shipSlotLabels } from '@/features/solar-voyage/model/game-state';
+import {
+  elementModuleDescriptions,
+  getAllowedElementsForSlot,
+  getDiscountedUnlockCost,
+  getInventoryItemLabels,
+  slotIdLabels,
+  slotTypeLabels,
+} from '@/features/solar-voyage/model/equipment';
 import { ELEMENTS } from '@/features/solar-voyage/model/types';
-import type { ElementKey } from '@/features/solar-voyage/model/types';
+import type {
+  ElementKey,
+  EquipmentSlotState,
+  ShipBonuses,
+} from '@/features/solar-voyage/model/types';
 import { cn } from '@/lib/utils';
 
 type MissionControlProps = {
@@ -64,14 +75,19 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
     state,
     hasSavedMission,
     availableDestinations,
+    availableInventorySlots,
     coordinatesLabel,
     missionTimerLabel,
+    shipBonuses,
     travelCountdownLabel,
     travelProgress,
     currentPosition,
     startMission,
     selectDestination,
     startTravel,
+    installEquipment,
+    removeEquipment,
+    unlockEquipmentSlot,
     clearNotification,
     exportSnapshot,
     importSnapshot,
@@ -349,7 +365,16 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
 
           <section className="grid min-h-0 flex-1 grid-cols-[260px_430px_minmax(0,1fr)] gap-5">
             <aside className="min-h-0">
-              <CargoPanel className="h-full" items={shipSlotLabels} title="Raumschiff-Ausrustung" />
+              <EquipmentPanel
+                className="h-full"
+                equipmentSlots={state.equipmentSlots}
+                isTraveling={Boolean(state.travel)}
+                resources={state.resources}
+                shipBonuses={shipBonuses}
+                onInstall={installEquipment}
+                onRemove={removeEquipment}
+                onUnlock={unlockEquipmentSlot}
+              />
             </aside>
 
             <section className="min-h-0">
@@ -369,7 +394,10 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
 
             <aside className="grid min-h-0 grid-rows-[minmax(0,1fr)_220px] gap-5">
               <ResourcePanel className="min-h-0" resources={state.resources} />
-              <CargoPanel compact items={inventoryItemLabels} title="Inventory" />
+              <InventoryPanel
+                items={getInventoryItemLabels(availableInventorySlots)}
+                title="Inventory"
+              />
             </aside>
           </section>
         </div>
@@ -850,44 +878,262 @@ function ResourcePanel({
   );
 }
 
-function CargoPanel({
+function EquipmentPanel({
   className,
-  compact = false,
-  items,
-  title,
+  equipmentSlots,
+  isTraveling,
+  onInstall,
+  onRemove,
+  onUnlock,
+  resources,
+  shipBonuses,
 }: {
   className?: string;
-  compact?: boolean;
-  items: string[];
-  title: string;
+  equipmentSlots: EquipmentSlotState[];
+  isTraveling: boolean;
+  onInstall: (slotId: string, element: ElementKey) => void;
+  onRemove: (slotId: string) => void;
+  onUnlock: (slotId: string) => void;
+  resources: Record<ElementKey, number>;
+  shipBonuses: ShipBonuses;
 }) {
   return (
     <div
       className={cn(
-        'glass-panel hud-outline rounded-[2rem] p-5',
-        compact && 'flex h-full flex-col overflow-hidden',
+        'glass-panel hud-outline flex h-full min-h-0 flex-col overflow-hidden rounded-[2rem] p-5',
         className,
       )}
     >
-      <div className={cn('flex flex-col gap-1', compact ? 'mb-3 shrink-0' : 'mb-5')}>
+      <div className="mb-4 flex shrink-0 flex-col gap-1">
+        <h3 className="font-[family-name:var(--font-display)] text-xl tracking-[0.2em] text-white uppercase">
+          Raumschiff-Ausrustung
+        </h3>
+        <p className="text-xs text-slate-400">
+          Scrollable hybrid bays for propulsion, systems, reactor, and structure modules.
+        </p>
+        <p className="text-[10px] tracking-[0.16em] text-slate-500 uppercase">
+          {equipmentSlots.filter((slot) => slot.unlocked).length}/{equipmentSlots.length} bays
+          online
+        </p>
+      </div>
+
+      <div className="mb-4 grid shrink-0 grid-cols-2 gap-2 text-[9px] tracking-[0.14em] uppercase">
+        <BonusChip label="Travel" value={`-${shipBonuses.travelDurationPct}%`} />
+        <BonusChip label="Rare" value={`+${shipBonuses.rareRewardPct}%`} />
+        <BonusChip label="Hydrogen" value={`+${shipBonuses.hydrogenRewardPct}%`} />
+        <BonusChip label="Unlock" value={`-${shipBonuses.unlockDiscountPct}%`} />
+      </div>
+
+      <div
+        className="grid min-h-0 flex-1 auto-rows-max gap-3 overflow-y-auto pr-1"
+        data-testid="equipment-panel"
+      >
+        {equipmentSlots.map((slot) => (
+          <EquipmentSlotCard
+            key={slot.id}
+            isTraveling={isTraveling}
+            resources={resources}
+            shipBonuses={shipBonuses}
+            slot={slot}
+            onInstall={onInstall}
+            onRemove={onRemove}
+            onUnlock={onUnlock}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EquipmentSlotCard({
+  isTraveling,
+  onInstall,
+  onRemove,
+  onUnlock,
+  resources,
+  shipBonuses,
+  slot,
+}: {
+  isTraveling: boolean;
+  onInstall: (slotId: string, element: ElementKey) => void;
+  onRemove: (slotId: string) => void;
+  onUnlock: (slotId: string) => void;
+  resources: Record<ElementKey, number>;
+  shipBonuses: ShipBonuses;
+  slot: EquipmentSlotState;
+}) {
+  const compatibleElements = getAllowedElementsForSlot(slot.type).filter(
+    (elementKey) => resources[elementKey] > 0,
+  );
+  const discountedUnlockCost = getDiscountedUnlockCost(
+    slot.unlockCost,
+    shipBonuses.unlockDiscountPct,
+  );
+
+  return (
+    <div
+      className="border-primary/20 flex flex-col gap-3 rounded-2xl border bg-white/6 p-3"
+      data-testid={`equipment-slot-${slot.id}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] tracking-[0.18em] text-slate-400 uppercase">
+            {slotTypeLabels[slot.type]}
+          </p>
+          <h4 className="mt-1 text-sm font-semibold tracking-[0.12em] text-white uppercase">
+            {slotIdLabels[slot.id]}
+          </h4>
+        </div>
+        <Badge
+          className={cn(
+            slot.unlocked ? 'bg-primary/15 text-primary' : 'bg-white/10 text-slate-300',
+          )}
+        >
+          {slot.unlocked ? (slot.installedElement ? 'Installed' : 'Ready') : 'Locked'}
+        </Badge>
+      </div>
+
+      {!slot.unlocked ? (
+        <>
+          <p className="text-xs leading-5 text-slate-300">
+            Expansion locked. Reinforce this bay to bring it online.
+          </p>
+          <p className="text-[10px] tracking-[0.12em] text-slate-400 uppercase">
+            Cost: {formatResourceCost(discountedUnlockCost)}
+          </p>
+          <Button
+            className="h-9 tracking-[0.16em] uppercase"
+            disabled={isTraveling || !canAffordCost(resources, discountedUnlockCost)}
+            onClick={() => onUnlock(slot.id)}
+            size="sm"
+            type="button"
+          >
+            Unlock
+          </Button>
+        </>
+      ) : slot.installedElement ? (
+        <>
+          <div className="rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-2">
+            <p className="text-accent text-[11px] font-bold">
+              {ELEMENTS[slot.installedElement].symbol} {ELEMENTS[slot.installedElement].name}
+            </p>
+            <p className="mt-1 text-[11px] leading-5 text-slate-300">
+              {elementModuleDescriptions[slot.installedElement]}
+            </p>
+          </div>
+          <Button
+            className="h-9 tracking-[0.16em] uppercase"
+            disabled={isTraveling}
+            onClick={() => onRemove(slot.id)}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            Remove
+          </Button>
+        </>
+      ) : (
+        <>
+          <p className="text-xs leading-5 text-slate-300">
+            Empty bay. Install one compatible element to activate its ship bonus.
+          </p>
+          {compatibleElements.length > 0 ? (
+            compatibleElements.length === 1 ? (
+              <Button
+                className="h-9 tracking-[0.14em] uppercase"
+                onClick={() => onInstall(slot.id, compatibleElements[0])}
+                size="sm"
+                type="button"
+              >
+                Install {ELEMENTS[compatibleElements[0]].name}
+              </Button>
+            ) : (
+              <Select onValueChange={(value) => onInstall(slot.id, value as ElementKey)}>
+                <SelectTrigger
+                  aria-label={`Install module into ${slotIdLabels[slot.id]}`}
+                  className="bg-secondary/65 h-10 w-full"
+                >
+                  <SelectValue placeholder="Install module" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {compatibleElements.map((elementKey) => (
+                      <SelectItem key={elementKey} value={elementKey}>
+                        {ELEMENTS[elementKey].name} ({resources[elementKey]})
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            )
+          ) : (
+            <p className="rounded-2xl border border-dashed border-white/10 px-3 py-2 text-[11px] leading-5 text-slate-400">
+              No compatible resources available.
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function InventoryPanel({ items, title }: { items: string[]; title: string }) {
+  return (
+    <div className="glass-panel hud-outline flex h-full flex-col overflow-hidden rounded-[2rem] p-5">
+      <div className="mb-3 shrink-0">
         <h3 className="font-[family-name:var(--font-display)] text-xl tracking-[0.2em] text-white uppercase">
           {title}
         </h3>
-        <p className="text-xs text-slate-400">Placeholder slots prepared for future systems.</p>
+        <p className="text-xs text-slate-400">
+          Cargo capacity now follows active structure modules.
+        </p>
       </div>
-      <div className={cn('grid grid-cols-3 gap-3', compact && 'min-h-0 flex-1 auto-rows-fr gap-2')}>
+      <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-3 gap-2 overflow-y-auto pr-1">
         {items.map((item) => (
           <div
             key={item}
-            className={cn(
-              'border-primary/25 hover:border-accent/40 flex items-center justify-center rounded-2xl border border-dashed bg-white/5 px-3 text-center font-medium tracking-[0.12em] text-slate-200 uppercase transition-transform duration-200 hover:scale-[1.02] hover:bg-white/8',
-              compact ? 'min-h-0 text-[9px]' : 'aspect-square text-[10px]',
-            )}
+            className="border-primary/25 hover:border-accent/40 flex min-h-0 items-center justify-center rounded-2xl border border-dashed bg-white/5 px-3 text-center font-medium tracking-[0.12em] text-slate-200 uppercase transition-transform duration-200 hover:scale-[1.02] hover:bg-white/8"
           >
-            {item}
+            <span className="text-[9px]">{item}</span>
           </div>
         ))}
       </div>
     </div>
   );
+}
+
+function BonusChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/8 bg-slate-950/35 px-2 py-2 text-center">
+      <p className="text-slate-500">{label}</p>
+      <p className="mt-1 text-[11px] font-semibold text-white">{value}</p>
+    </div>
+  );
+}
+
+function canAffordCost(
+  resources: Record<ElementKey, number>,
+  unlockCost: Partial<Record<ElementKey, number>> | null,
+) {
+  if (!unlockCost) {
+    return false;
+  }
+
+  return Object.entries(unlockCost).every(([key, value]) => {
+    if (typeof value !== 'number') {
+      return true;
+    }
+
+    return resources[key as ElementKey] >= value;
+  });
+}
+
+function formatResourceCost(unlockCost: Partial<Record<ElementKey, number>> | null) {
+  if (!unlockCost) {
+    return 'N/A';
+  }
+
+  return Object.entries(unlockCost)
+    .map(([key, value]) => `${ELEMENTS[key as ElementKey].symbol} ${value}`)
+    .join(' / ');
 }
