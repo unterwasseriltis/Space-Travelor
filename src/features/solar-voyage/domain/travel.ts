@@ -23,6 +23,10 @@ export function calculateTravelRewards(distanceKm: number, progress: number): Re
   return rewards;
 }
 
+export function calculateHydrogenReward(distanceKm: number, progress: number) {
+  return calculateTravelRewards(distanceKm, progress).hydrogen;
+}
+
 export function formatDuration(totalSeconds: number) {
   const safeSeconds = Math.max(0, totalSeconds);
   const hours = Math.floor(safeSeconds / 3600);
