@@ -3,8 +3,43 @@ let currentLocation = 'Erde';
 let startTime = null;
 let timerInterval = null;
 let countdownInterval = null;
-let hydrogen = 0;
 let mapInterval = null;
+
+// Periodensystem-Elemente (H bis Si)
+const elements = {
+  hydrogen: { symbol: 'H', name: 'Wasserstoff', rarity: 1.0 },      // Häufigkeit: 100%
+  helium: { symbol: 'He', name: 'Helium', rarity: 0.85 },            // Häufigkeit: 85%
+  lithium: { symbol: 'Li', name: 'Lithium', rarity: 0.70 },          // Häufigkeit: 70%
+  beryllium: { symbol: 'Be', name: 'Beryllium', rarity: 0.60 },      // Häufigkeit: 60%
+  boron: { symbol: 'B', name: 'Bor', rarity: 0.50 },                 // Häufigkeit: 50%
+  carbon: { symbol: 'C', name: 'Kohlenstoff', rarity: 0.42 },      // Häufigkeit: 42%
+  nitrogen: { symbol: 'N', name: 'Stickstoff', rarity: 0.35 },      // Häufigkeit: 35%
+  oxygen: { symbol: 'O', name: 'Sauerstoff', rarity: 0.28 },        // Häufigkeit: 28%
+  fluorine: { symbol: 'F', name: 'Fluor', rarity: 0.22 },           // Häufigkeit: 22%
+  neon: { symbol: 'Ne', name: 'Neon', rarity: 0.17 },               // Häufigkeit: 17%
+  sodium: { symbol: 'Na', name: 'Natrium', rarity: 0.13 },           // Häufigkeit: 13%
+  magnesium: { symbol: 'Mg', name: 'Magnesium', rarity: 0.10 },     // Häufigkeit: 10%
+  aluminium: { symbol: 'Al', name: 'Aluminium', rarity: 0.07 },     // Häufigkeit: 7%
+  silicon: { symbol: 'Si', name: 'Silizium', rarity: 0.05 }        // Häufigkeit: 5%
+};
+
+// Element-Mengen
+const elementAmounts = {
+  hydrogen: 0,
+  helium: 0,
+  lithium: 0,
+  beryllium: 0,
+  boron: 0,
+  carbon: 0,
+  nitrogen: 0,
+  oxygen: 0,
+  fluorine: 0,
+  neon: 0,
+  sodium: 0,
+  magnesium: 0,
+  aluminium: 0,
+  silicon: 0
+};
 
 // 2D-Koordinaten (AU)
 const celestialBodies = {
@@ -166,71 +201,83 @@ function createInventory() {
 }
 
 function updateResources() {
-    document.getElementById('hydrogen').textContent = Math.floor(hydrogen);
-    document.getElementById('helium').textContent = 0;
-    document.getElementById('lithium').textContent = 0;
+  Object.keys(elementAmounts).forEach(key => {
+    const element = document.getElementById(key);
+    if (element) {
+      element.textContent = Math.floor(elementAmounts[key]);
+    }
+  });
 }
 
 // === REISE ===
 function startTravel(target) {
-    if (!target) { alert("Bitte wählen Sie ein Ziel aus."); return; }
+  if (!target) {
+    alert("Bitte wählen Sie ein Ziel aus.");
+    return;
+  }
 
-    const totalMinutes = calculateTravelTime(target);
-    const distAU = distanceMatrix[currentLocation][target];
-    const totalKM = distAU * KM_PER_AU;
+  const totalMinutes = calculateTravelTime(target);
+  const distAU = distanceMatrix[currentLocation][target];
+  const totalKM = distAU * KM_PER_AU;
 
-    const info = document.getElementById('travel-info');
-    info.classList.remove('hidden');
+  const info = document.getElementById('travel-info');
+  info.classList.remove('hidden');
 
-    const btn = document.getElementById('accelerate-btn');
-    btn.disabled = true;
-    btn.textContent = "Reise läuft...";
+  const btn = document.getElementById('accelerate-btn');
+  btn.disabled = true;
+  btn.textContent = "Reise läuft...";
 
-    let remainingSeconds = totalMinutes * 60;
-    let hydrogenAdded = 0;
+  let remainingSeconds = totalMinutes * 60;
 
-    info.innerHTML = `Reise zu <strong>${target}</strong> gestartet.<br>
-                      Noch <span id="countdown-timer">${totalMinutes}:00</span> Minuten`;
+  // Speichert bereits hinzugefügte Mengen für jedes Element
+  const elementAdded = {};
+  Object.keys(elements).forEach(key => {
+    elementAdded[key] = 0;
+  });
 
-    if (countdownInterval) clearInterval(countdownInterval);
+  info.innerHTML = `Reise zu <strong>${target}</strong> gestartet.<br> Noch <span id="countdown-timer">${totalMinutes}:00</span> Minuten`;
 
-    countdownInterval = setInterval(() => {
-        remainingSeconds--;
+  if (countdownInterval) clearInterval(countdownInterval);
 
-        const minLeft = Math.floor(remainingSeconds / 60);
-        const secLeft = remainingSeconds % 60;
-        document.getElementById('countdown-timer').textContent = `${minLeft}:${secLeft < 10 ? '0' : ''}${secLeft}`;
+  countdownInterval = setInterval(() => {
+    remainingSeconds--;
+    const minLeft = Math.floor(remainingSeconds / 60);
+    const secLeft = remainingSeconds % 60;
+    document.getElementById('countdown-timer').textContent = `${minLeft}:${secLeft < 10 ? '0' : ''}${secLeft}`;
 
-        // Wasserstoff aufladen
-        const progress = (totalMinutes * 60 - remainingSeconds) / (totalMinutes * 60);
-        const currentAdded = Math.floor((totalKM / 50000) * 3 * progress);
-        if (currentAdded > hydrogenAdded) {
-            hydrogen += (currentAdded - hydrogenAdded);
-            hydrogenAdded = currentAdded;
-            updateResources();
-        }
+    // Elemente sammeln basierend auf Seltenheit
+    const progress = (totalMinutes * 60 - remainingSeconds) / (totalMinutes * 60);
+    const baseAmount = (totalKM / 50000) * 3;
 
-        // Koordinaten aktualisieren
-        const currentX = (celestialBodies[currentLocation].x * (1 - progress) + celestialBodies[target].x * progress).toFixed(3);
-        const currentY = (celestialBodies[currentLocation].y * (1 - progress) + celestialBodies[target].y * progress).toFixed(3);
-        document.getElementById('current-coordinates').textContent = `Koordinaten: X: ${currentX} AU | Y: ${currentY} AU`;
+    Object.keys(elements).forEach(key => {
+      const element = elements[key];
+      const currentAdded = Math.floor(baseAmount * progress * element.rarity);
+      if (currentAdded > elementAdded[key]) {
+        elementAmounts[key] += (currentAdded - elementAdded[key]);
+        elementAdded[key] = currentAdded;
+      }
+    });
 
-        if (remainingSeconds <= 0) {
-            clearInterval(countdownInterval);
-            currentLocation = target;
+    updateResources();
 
-            document.getElementById('location').textContent = `Standort: ${currentLocation}`;
-            document.getElementById('current-coordinates').textContent = `Koordinaten: ${getCurrentCoordinates()}`;
+    // Koordinaten aktualisieren
+    const currentX = (celestialBodies[currentLocation].x * (1 - progress) + celestialBodies[target].x * progress).toFixed(3);
+    const currentY = (celestialBodies[currentLocation].y * (1 - progress) + celestialBodies[target].y * progress).toFixed(3);
+    document.getElementById('current-coordinates').textContent = `Koordinaten: X: ${currentX} AU | Y: ${currentY} AU`;
 
-            info.classList.add('hidden');
-            btn.disabled = false;
-            btn.textContent = "Beschleunigen";
-
-            populateDestinationSelect();
-            drawSolarMap();
-            alert(`✅ Sie sind erfolgreich auf ${target} angekommen!`);
-        }
-    }, 1000);
+    if (remainingSeconds <= 0) {
+      clearInterval(countdownInterval);
+      currentLocation = target;
+      document.getElementById('location').textContent = `Standort: ${currentLocation}`;
+      document.getElementById('current-coordinates').textContent = `Koordinaten: ${getCurrentCoordinates()}`;
+      info.classList.add('hidden');
+      btn.disabled = false;
+      btn.textContent = "Beschleunigen";
+      populateDestinationSelect();
+      drawSolarMap();
+      alert(`✅ Sie sind erfolgreich auf ${target} angekommen!`);
+    }
+  }, 1000);
 }
 
 // === INITIALISIERUNG ===
@@ -248,7 +295,10 @@ function startNewGame() {
     drawSolarMap();
     startMapUpdate();
 
-    hydrogen = 0;
+  // Alle Elemente zurücksetzen
+  Object.keys(elementAmounts).forEach(key => {
+    elementAmounts[key] = 0;
+  });
     updateResources();
 }
 
