@@ -19,7 +19,9 @@ export function calculateTravelRewards(distanceKm: number, progress: number): Re
   const rewards = {} as ResourceState;
 
   Object.entries(ELEMENTS).forEach(([key, element]) => {
-    rewards[key as ElementKey] = Math.floor((distanceKm / 50_000) * 3 * clampedProgress * element.rarity);
+    rewards[key as ElementKey] = Math.floor(
+      (distanceKm / 50_000) * 3 * clampedProgress * element.rarity,
+    );
   });
 
   return rewards;

@@ -1,4 +1,9 @@
-import { calculateHydrogenReward, calculateTravelDistanceKm, calculateTravelDurationSeconds, formatDuration } from '@/features/solar-voyage/domain/travel';
+import {
+  calculateHydrogenReward,
+  calculateTravelDistanceKm,
+  calculateTravelDurationSeconds,
+  formatDuration,
+} from '@/features/solar-voyage/domain/travel';
 
 describe('travel domain', () => {
   it('calculates at least one minute of travel time', () => {
@@ -10,7 +15,9 @@ describe('travel domain', () => {
 
     expect(calculateHydrogenReward(distance, 0)).toBe(0);
     expect(calculateHydrogenReward(distance, 0.5)).toBeGreaterThan(0);
-    expect(calculateHydrogenReward(distance, 1)).toBeGreaterThan(calculateHydrogenReward(distance, 0.5));
+    expect(calculateHydrogenReward(distance, 1)).toBeGreaterThan(
+      calculateHydrogenReward(distance, 0.5),
+    );
   });
 
   it('formats mission time as hh:mm:ss', () => {

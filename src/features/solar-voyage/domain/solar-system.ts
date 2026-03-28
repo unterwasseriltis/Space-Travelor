@@ -39,7 +39,11 @@ export function formatCoordinates(position: Coordinates) {
   return `X: ${position.x.toFixed(3)} AU | Y: ${position.y.toFixed(3)} AU`;
 }
 
-export function interpolateCoordinates(from: Coordinates, to: Coordinates, progress: number): Coordinates {
+export function interpolateCoordinates(
+  from: Coordinates,
+  to: Coordinates,
+  progress: number,
+): Coordinates {
   return {
     x: from.x * (1 - progress) + to.x * progress,
     y: from.y * (1 - progress) + to.y * progress,

@@ -53,7 +53,8 @@ export function useSolarVoyage() {
     travelProgress: getTravelProgress(state),
     currentPosition: getCurrentPosition(state),
     startMission: () => dispatch({ type: 'mission/started' }),
-    selectDestination: (destination: BodyName | '') => dispatch({ type: 'destination/selected', destination }),
+    selectDestination: (destination: BodyName | '') =>
+      dispatch({ type: 'destination/selected', destination }),
     startTravel: () => dispatch({ type: 'travel/started' }),
     clearNotification: () => dispatch({ type: 'notification/cleared' }),
   };

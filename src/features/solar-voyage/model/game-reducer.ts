@@ -1,5 +1,13 @@
-import { calculateTravelDistanceKm, calculateTravelDurationSeconds, calculateTravelRewards } from '@/features/solar-voyage/domain/travel';
-import { createInitialGameState, createInitialResources, getInitialDestination } from '@/features/solar-voyage/model/game-state';
+import {
+  calculateTravelDistanceKm,
+  calculateTravelDurationSeconds,
+  calculateTravelRewards,
+} from '@/features/solar-voyage/domain/travel';
+import {
+  createInitialGameState,
+  createInitialResources,
+  getInitialDestination,
+} from '@/features/solar-voyage/model/game-state';
 import type { ElementKey, GameAction, GameState } from '@/features/solar-voyage/model/types';
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -38,7 +46,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         };
       }
 
-      const durationSeconds = calculateTravelDurationSeconds(state.currentLocation, state.selectedDestination);
+      const durationSeconds = calculateTravelDurationSeconds(
+        state.currentLocation,
+        state.selectedDestination,
+      );
 
       return {
         ...state,
@@ -68,7 +79,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       Object.keys(nextRewards).forEach((key) => {
         const elementKey = key as ElementKey;
-        const delta = Math.max(0, nextRewards[elementKey] - state.travel!.earnedResources[elementKey]);
+        const delta = Math.max(
+          0,
+          nextRewards[elementKey] - state.travel!.earnedResources[elementKey],
+        );
         updatedResources[elementKey] += delta;
         nextEarnedResources[elementKey] = nextRewards[elementKey];
       });

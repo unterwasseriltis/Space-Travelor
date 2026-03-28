@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit -p tsconfig.app.json && vite build",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
@@ -43,6 +45,8 @@
     "eslint-plugin-testing-library": "^7.16.2",
     "globals": "^17.4.0",
     "jsdom": "^29.0.1",
+    "prettier": "^3.8.1",
+    "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.2",

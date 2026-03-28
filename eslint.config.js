@@ -60,10 +60,7 @@ export default tseslint.config(
   },
   {
     files: ['src/**/*.{test,spec}.{ts,tsx}', 'src/test/**/*.{ts,tsx}'],
-    extends: [
-      testingLibrary.configs['flat/react'],
-      jestDom.configs['flat/recommended'],
-    ],
+    extends: [testingLibrary.configs['flat/react'], jestDom.configs['flat/recommended']],
     languageOptions: {
       globals: {
         ...globals.browser,

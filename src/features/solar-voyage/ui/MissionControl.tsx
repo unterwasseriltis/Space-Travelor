@@ -4,7 +4,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { celestialBodies } from '@/features/solar-voyage/domain/solar-system';
 import { useSolarVoyage } from '@/features/solar-voyage/hooks/use-solar-voyage';
@@ -75,26 +82,39 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
           <div className="grid w-full items-center gap-10 xl:grid-cols-[minmax(0,740px)_1fr]">
             <section className="animate-rise flex flex-col gap-8">
               <div className="flex flex-col gap-4">
-                <Badge className="w-fit bg-primary/15 text-primary">Mission Control</Badge>
-                <p className="text-sm uppercase tracking-[0.5em] text-primary/80">Launch Interface</p>
+                <Badge className="bg-primary/15 text-primary w-fit">Mission Control</Badge>
+                <p className="text-primary/80 text-sm tracking-[0.5em] uppercase">
+                  Launch Interface
+                </p>
                 <h1 className="font-[family-name:var(--font-display)] text-5xl leading-none tracking-[0.18em] text-white md:text-8xl">
                   Solar Voyage
                 </h1>
                 <p className="max-w-2xl text-xl leading-9 text-slate-300">
-                  Step into the restored cockpit and chart the next burn. The bridge is live again, with the
-                  original artwork driving the whole experience. Navigation, telemetry, and resource management
-                  are online and ready for the next system jump.
+                  Step into the restored cockpit and chart the next burn. The bridge is live again,
+                  with the original artwork driving the whole experience. Navigation, telemetry, and
+                  resource management are online and ready for the next system jump.
                 </p>
               </div>
 
               <div className="flex flex-col gap-3 sm:max-w-sm">
-                <Button className="h-14 text-lg font-bold uppercase tracking-[0.2em]" onClick={startMission}>
+                <Button
+                  className="h-14 text-lg font-bold tracking-[0.2em] uppercase"
+                  onClick={startMission}
+                >
                   New Mission
                 </Button>
-                <Button className="h-14 text-lg uppercase tracking-[0.2em]" variant="secondary" disabled>
+                <Button
+                  className="h-14 text-lg tracking-[0.2em] uppercase"
+                  variant="secondary"
+                  disabled
+                >
                   Load Mission
                 </Button>
-                <Button className="h-14 text-lg uppercase tracking-[0.2em]" variant="outline" disabled>
+                <Button
+                  className="h-14 text-lg tracking-[0.2em] uppercase"
+                  variant="outline"
+                  disabled
+                >
                   Exit Sequence
                 </Button>
               </div>
@@ -121,7 +141,7 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       <div className="starfield fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(4,7,17,0.08),rgba(4,7,17,0.35))]" />
 
       <div
-        className="absolute left-1/2 top-1/2 z-10"
+        className="absolute top-1/2 left-1/2 z-10"
         style={{
           height: `${missionViewportLayout.height}px`,
           transform: `translate(-50%, -50%) scale(${missionViewportLayout.scale})`,
@@ -131,7 +151,11 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       >
         <div className="flex h-full w-full flex-col gap-5 p-6">
           <header className="grid shrink-0 grid-cols-[260px_minmax(0,1fr)] gap-5">
-            <MapPanel className="h-full" currentLocation={state.currentLocation} currentPosition={currentPosition} />
+            <MapPanel
+              className="h-full"
+              currentLocation={state.currentLocation}
+              currentPosition={currentPosition}
+            />
 
             <div className="flex min-h-[210px] flex-col gap-5">
               <div className="glass-panel hud-outline grid flex-1 grid-cols-[1fr_auto_1fr] items-center rounded-[2rem] px-8 py-5">
@@ -141,7 +165,9 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
                 </div>
 
                 <div className="text-center">
-                  <p className="text-xs font-bold uppercase tracking-[0.32em] text-primary">Missionszeit</p>
+                  <p className="text-primary text-xs font-bold tracking-[0.32em] uppercase">
+                    Missionszeit
+                  </p>
                   <p className="mt-2 font-[family-name:var(--font-display)] text-4xl tracking-[0.16em] text-white">
                     {missionTimerLabel}
                   </p>
@@ -149,13 +175,19 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
 
                 <div className="flex items-center justify-end gap-2">
                   <Badge className="bg-accent/20 text-accent">Status</Badge>
-                  <span className="text-lg font-medium text-slate-200">{state.travel ? 'In transit' : 'Docked'}</span>
+                  <span className="text-lg font-medium text-slate-200">
+                    {state.travel ? 'In transit' : 'Docked'}
+                  </span>
                 </div>
               </div>
 
               <div className="glass-panel hud-outline rounded-[2rem] px-6 py-5">
                 <div className="grid grid-cols-2 gap-5">
-                  <StatusBar label="Rumpf" value={state.ship.hull} accentClassName="[&_[data-slot=progress-indicator]]:bg-red-400" />
+                  <StatusBar
+                    label="Rumpf"
+                    value={state.ship.hull}
+                    accentClassName="[&_[data-slot=progress-indicator]]:bg-red-400"
+                  />
                   <StatusBar
                     label="Schilde"
                     value={state.ship.shields}
@@ -242,8 +274,8 @@ function useMissionViewportLayout() {
 
 function LaunchMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border-l border-primary/25 pl-4">
-      <p className="text-xs uppercase tracking-[0.26em] text-slate-500">{label}</p>
+    <div className="border-primary/25 border-l pl-4">
+      <p className="text-xs tracking-[0.26em] text-slate-500 uppercase">{label}</p>
       <p className="mt-2 text-lg font-semibold text-white">{value}</p>
     </div>
   );
@@ -259,10 +291,17 @@ function MapPanel({
   currentPosition: { x: number; y: number };
 }) {
   return (
-    <div className={cn('glass-panel hud-outline flex flex-col items-center gap-3 overflow-hidden rounded-[2rem] p-4 text-center', className)}>
-      <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Sonnensystem (2D)</span>
-      <div className="relative size-48 rounded-full border border-primary/25 bg-[radial-gradient(circle_at_center,#09213f_0%,#02050d_72%)]">
-        <div className="absolute left-1/2 top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-300 shadow-[0_0_20px_rgba(255,209,102,0.65)]" />
+    <div
+      className={cn(
+        'glass-panel hud-outline flex flex-col items-center gap-3 overflow-hidden rounded-[2rem] p-4 text-center',
+        className,
+      )}
+    >
+      <span className="text-primary text-[10px] font-bold tracking-[0.3em] uppercase">
+        Sonnensystem (2D)
+      </span>
+      <div className="border-primary/25 relative size-48 rounded-full border bg-[radial-gradient(circle_at_center,#09213f_0%,#02050d_72%)]">
+        <div className="absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-300 shadow-[0_0_20px_rgba(255,209,102,0.65)]" />
         {Object.entries(celestialBodies).map(([name, body]) => (
           <div
             key={name}
@@ -275,17 +314,17 @@ function MapPanel({
             <div
               className={cn(
                 'size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20',
-                name === currentLocation && 'ring-2 ring-primary/40',
+                name === currentLocation && 'ring-primary/40 ring-2',
               )}
               style={{ backgroundColor: body.color }}
             />
-            <span className="mt-1 block -translate-x-1/2 text-center text-[8px] uppercase tracking-[0.1em] text-slate-300">
+            <span className="mt-1 block -translate-x-1/2 text-center text-[8px] tracking-[0.1em] text-slate-300 uppercase">
               {name}
             </span>
           </div>
         ))}
         <div
-          className="absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary bg-primary/20 shadow-[0_0_15px_rgba(107,243,255,0.65)]"
+          className="border-primary bg-primary/20 absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border shadow-[0_0_15px_rgba(107,243,255,0.65)]"
           style={{
             left: `calc(50% + ${currentPosition.x * 6}px)`,
             top: `calc(50% + ${currentPosition.y * 6}px)`,
@@ -307,7 +346,9 @@ function StatusBar({
 }) {
   return (
     <div className="flex items-center gap-4">
-      <span className="w-20 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{label}</span>
+      <span className="text-primary w-20 text-[10px] font-bold tracking-[0.2em] uppercase">
+        {label}
+      </span>
       <Progress className={cn('h-3 flex-1 bg-white/10', accentClassName)} value={value} />
       <span className="w-12 text-center text-xs font-bold text-white/90">{value}%</span>
     </div>
@@ -338,27 +379,34 @@ function NavigationPanel({
   travelProgress: number;
 }) {
   return (
-    <div className={cn('glass-panel hud-outline flex h-full min-h-0 flex-col gap-5 rounded-[2rem] p-5', className)}>
+    <div
+      className={cn(
+        'glass-panel hud-outline flex h-full min-h-0 flex-col gap-5 rounded-[2rem] p-5',
+        className,
+      )}
+    >
       <div className="flex flex-col gap-1">
-        <h3 className="font-[family-name:var(--font-display)] text-xl uppercase tracking-[0.2em] text-white">
+        <h3 className="font-[family-name:var(--font-display)] text-xl tracking-[0.2em] text-white uppercase">
           Navigation
         </h3>
-        <p className="text-xs text-slate-400">Plot a course and monitor the ship while it accelerates.</p>
+        <p className="text-xs text-slate-400">
+          Plot a course and monitor the ship while it accelerates.
+        </p>
       </div>
       <div className="flex flex-1 flex-col gap-5">
-        <div className="rounded-2xl border border-border bg-muted/45 p-4">
-          <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Current Coordinates</p>
+        <div className="border-border bg-muted/45 rounded-2xl border p-4">
+          <p className="text-xs tracking-[0.28em] text-slate-400 uppercase">Current Coordinates</p>
           <p className="mt-2 font-mono text-lg text-white">{coordinatesLabel}</p>
         </div>
 
         <div className="flex flex-col gap-3">
-          <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Destination</p>
+          <p className="text-xs tracking-[0.28em] text-slate-400 uppercase">Destination</p>
           <Select
             disabled={isTraveling}
             onValueChange={(value) => onDestinationChange(value as keyof typeof celestialBodies)}
             value={selectedDestination}
           >
-            <SelectTrigger className="h-12 w-full bg-secondary/65">
+            <SelectTrigger className="bg-secondary/65 h-12 w-full">
               <SelectValue placeholder="Choose a destination" />
             </SelectTrigger>
             <SelectContent>
@@ -373,24 +421,31 @@ function NavigationPanel({
           </Select>
         </div>
 
-        <Button className="h-12 uppercase tracking-[0.18em]" disabled={isTraveling} onClick={onStartTravel}>
+        <Button
+          className="h-12 tracking-[0.18em] uppercase"
+          disabled={isTraveling}
+          onClick={onStartTravel}
+        >
           {isTraveling ? 'Travel in Progress' : 'Accelerate'}
         </Button>
 
         {isTraveling ? (
-          <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4">
-            <div className="mb-3 flex items-center justify-between text-sm uppercase tracking-[0.18em] text-primary">
+          <div className="border-primary/20 bg-primary/10 rounded-2xl border p-4">
+            <div className="text-primary mb-3 flex items-center justify-between text-sm tracking-[0.18em] uppercase">
               <span>Transit Countdown</span>
               <span>{travelCountdownLabel}</span>
             </div>
-            <Progress className="h-3 bg-white/8 [&_[data-slot=progress-indicator]]:bg-primary" value={travelProgress * 100} />
+            <Progress
+              className="[&_[data-slot=progress-indicator]]:bg-primary h-3 bg-white/8"
+              value={travelProgress * 100}
+            />
           </div>
         ) : null}
 
         {notification ? (
           <>
             <Separator />
-            <p className="rounded-2xl border border-accent/25 bg-accent/10 px-4 py-3 text-sm text-amber-100">
+            <p className="border-accent/25 bg-accent/10 rounded-2xl border px-4 py-3 text-sm text-amber-100">
               {notification}
             </p>
           </>
@@ -410,7 +465,7 @@ function ResourcePanel({
   return (
     <Card size="sm" className={cn('glass-panel hud-outline h-full min-h-0', className)}>
       <CardHeader>
-        <CardTitle className="font-[family-name:var(--font-display)] text-xl uppercase tracking-[0.18em]">
+        <CardTitle className="font-[family-name:var(--font-display)] text-xl tracking-[0.18em] uppercase">
           Resources
         </CardTitle>
         <CardDescription>Collected mission materials. 14 elements tracked.</CardDescription>
@@ -419,11 +474,11 @@ function ResourcePanel({
         {Object.entries(ELEMENTS).map(([key, element]) => (
           <div
             key={key}
-            className="flex min-h-[74px] flex-col items-center justify-center rounded-xl border border-border bg-muted/30 px-2 py-1 text-center transition-colors hover:bg-muted/50"
+            className="border-border bg-muted/30 hover:bg-muted/50 flex min-h-[74px] flex-col items-center justify-center rounded-xl border px-2 py-1 text-center transition-colors"
           >
-            <p className="text-xs font-bold text-accent">{element.symbol}</p>
+            <p className="text-accent text-xs font-bold">{element.symbol}</p>
             <p className="text-2xl font-black text-white">{resources[key as ElementKey]}</p>
-            <p className="mt-1 truncate text-[8px] uppercase tracking-[0.1em] text-slate-400">
+            <p className="mt-1 truncate text-[8px] tracking-[0.1em] text-slate-400 uppercase">
               {element.name}
             </p>
           </div>
@@ -445,9 +500,15 @@ function CargoPanel({
   title: string;
 }) {
   return (
-    <div className={cn('glass-panel hud-outline rounded-[2rem] p-5', compact && 'flex h-full flex-col overflow-hidden', className)}>
+    <div
+      className={cn(
+        'glass-panel hud-outline rounded-[2rem] p-5',
+        compact && 'flex h-full flex-col overflow-hidden',
+        className,
+      )}
+    >
       <div className={cn('flex flex-col gap-1', compact ? 'mb-3 shrink-0' : 'mb-5')}>
-        <h3 className="font-[family-name:var(--font-display)] text-xl uppercase tracking-[0.2em] text-white">
+        <h3 className="font-[family-name:var(--font-display)] text-xl tracking-[0.2em] text-white uppercase">
           {title}
         </h3>
         <p className="text-xs text-slate-400">Placeholder slots prepared for future systems.</p>
@@ -457,7 +518,7 @@ function CargoPanel({
           <div
             key={item}
             className={cn(
-              'flex items-center justify-center rounded-2xl border border-dashed border-primary/25 bg-white/5 px-3 text-center font-medium uppercase tracking-[0.12em] text-slate-200 transition-transform duration-200 hover:scale-[1.02] hover:border-accent/40 hover:bg-white/8',
+              'border-primary/25 hover:border-accent/40 flex items-center justify-center rounded-2xl border border-dashed bg-white/5 px-3 text-center font-medium tracking-[0.12em] text-slate-200 uppercase transition-transform duration-200 hover:scale-[1.02] hover:bg-white/8',
               compact ? 'min-h-0 text-[9px]' : 'aspect-square text-[10px]',
             )}
           >
