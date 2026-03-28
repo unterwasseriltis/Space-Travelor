@@ -70,4 +70,24 @@ describe('gameReducer integration', () => {
       notification: null,
     });
   });
+
+  it('restores imported state and replaces the notification with import feedback', () => {
+    const importedState = {
+      ...createInitialGameState(),
+      missionElapsedSeconds: 18,
+      notification: null,
+      phase: 'mission' as const,
+    };
+
+    expect(
+      gameReducer(createInitialGameState(), {
+        type: 'state/restored',
+        source: 'import',
+        state: importedState,
+      }),
+    ).toEqual({
+      ...importedState,
+      notification: 'Save imported successfully.',
+    });
+  });
 });

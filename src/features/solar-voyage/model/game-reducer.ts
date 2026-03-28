@@ -12,6 +12,15 @@ import type { ElementKey, GameAction, GameState } from '@/features/solar-voyage/
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
+    case 'state/restored':
+      return {
+        ...action.state,
+        notification:
+          action.source === 'import'
+            ? 'Save imported successfully.'
+            : 'Autosave restored successfully.',
+      };
+
     case 'mission/started':
       return {
         ...createInitialGameState(),
