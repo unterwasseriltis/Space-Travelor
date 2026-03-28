@@ -22,20 +22,20 @@ let resources = {
 
 // Ressourcen-Sammel-Konfiguration
 const resourceConfigs = {
-    hydrogen: { distance: 100000, amount: 3 },
-    helium: { distance: 130769, amount: 3 },
+    hydrogen: { distance: 100000, amount: 5 },
+    helium: { distance: 130769, amount: 4 },
     lithium: { distance: 161538, amount: 3 },
     beryllium: { distance: 192308, amount: 3 },
-    boron: { distance: 223077, amount: 3 },
-    carbon: { distance: 253846, amount: 3 },
-    nitrogen: { distance: 284615, amount: 3 },
-    oxygen: { distance: 315385, amount: 3 },
-    fluorine: { distance: 346154, amount: 3 },
-    neon: { distance: 376923, amount: 3 },
-    sodium: { distance: 407692, amount: 3 },
-    magnesium: { distance: 438462, amount: 3 },
-    aluminium: { distance: 469231, amount: 3 },
-    silicon: { distance: 500000, amount: 3 }
+    boron: { distance: 223077, amount: 2 },
+    carbon: { distance: 253846, amount: 2 },
+    nitrogen: { distance: 284615, amount: 2 },
+    oxygen: { distance: 315385, amount: 2 },
+    fluorine: { distance: 346154, amount: 1 },
+    neon: { distance: 376923, amount: 1 },
+    sodium: { distance: 407692, amount: 1 },
+    magnesium: { distance: 438462, amount: 1 },
+    aluminium: { distance: 469231, amount: 1 },
+    silicon: { distance: 500000, amount: 1 }
 };
 
 // 2D-Koordinaten (AU)
@@ -241,7 +241,7 @@ function startTravel(target) {
             document.getElementById('arrival-message').textContent = `Sie sind erfolgreich auf ${target} angekommen!`;
             document.getElementById('arrival-modal').classList.remove('hidden');
         }
-    }, 1000);
+    }, 2000);
 }
 
 // === INITIALISIERUNG ===

@@ -108,10 +108,10 @@ body {
 
 /* Restliches Layout */
 .game-container {
-    display: grid; grid-template-columns: 25% 50% 25%;
+    display: grid; grid-template-columns: 1fr;
     width: 95%; max-width: 1450px; height: 68vh;
     margin: 20px auto; gap: 15px; z-index: 1;
-    align-items: end; padding-bottom: 40px;
+    align-items: end; padding-bottom: 40px; position: relative;
 }
 
 .panel {
@@ -120,32 +120,55 @@ body {
     box-shadow: 0 0 15px rgba(0,255,255,0.25); backdrop-filter: blur(4px);
 }
 
-.left-panel, .right-panel { height: 55%; display: flex; flex-direction: column; }
+.center-panel {
+    width: 30%;
+    margin: 0 auto;
+}
+
+.left-panel, .right-panel { 
+    position: absolute; 
+    top: 25vh; 
+    width: 7.5%; 
+    height: 50vh; 
+    display: flex; 
+    flex-direction: column; 
+    background: transparent; 
+    border: none; 
+    box-shadow: none; 
+    backdrop-filter: none; 
+    padding: 0; 
+    overflow: visible; 
+}
+
+.left-panel { left: 10%; }
+.right-panel { right: 26%; }
 
 .ship-slots-container {
     flex: 1; display: grid; grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(5, 1fr); gap: 3px; align-content: start; padding: 3px;
+    width: 80%; margin: 0 auto;
 }
 
 .inventory-container {
-    flex: 1; display: grid; grid-template-columns: 1fr;
-    grid-template-rows: repeat(4, 1fr); gap: 5px; align-content: start; padding: 5px;
+    flex: 1; display: grid; grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr); gap: 5px; align-content: start; padding: 5px;
+    width: 100%; margin: 0 auto;
 }
 
 .ship-slots-container .slot {
-    width: 100%; aspect-ratio: 1 / 1; border: 1px dashed #0ff;
+    width: 100%; aspect-ratio: 0.8 / 1; border: 1px dashed #0ff;
     display: flex; flex-direction: column; align-items: center;
     justify-content: center; background: rgba(255,255,255,0.07);
     border-radius: 3px; color: #0ff; text-align: center;
-    transition: all 0.2s ease; padding: 3px; font-size: 0.7em;
+    transition: all 0.2s ease; padding: 2px; font-size: 0.6em;
 }
 
 .inventory-container .item {
-    width: 100%; aspect-ratio: 2 / 1; border: 2px dashed #0ff;
+    width: 100%; aspect-ratio: 1 / 1; border: 2px dashed #0ff;
     display: flex; flex-direction: column; align-items: center;
     justify-content: center; background: rgba(255,255,255,0.07);
     border-radius: 6px; color: #0ff; text-align: center;
-    transition: all 0.2s ease; padding: 8px; font-size: 0.9em;
+    transition: all 0.2s ease; padding: 4px; font-size: 0.6em;
 }
 
 .slot:hover, .item:hover {
