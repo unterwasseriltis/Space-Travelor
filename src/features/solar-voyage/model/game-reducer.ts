@@ -71,8 +71,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       const remainingSeconds = Math.max(0, state.travel.remainingSeconds - 1);
-      const progress = (state.travel.totalSeconds - remainingSeconds) / state.travel.totalSeconds;
-      const nextRewards = calculateTravelRewards(state.travel.distanceKm, progress);
+      const elapsedSeconds = state.travel.totalSeconds - remainingSeconds;
+      const nextRewards = calculateTravelRewards(elapsedSeconds);
 
       const updatedResources = { ...state.resources };
       const nextEarnedResources = { ...state.travel.earnedResources };

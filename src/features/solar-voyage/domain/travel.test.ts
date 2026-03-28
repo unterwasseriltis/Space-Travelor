@@ -12,32 +12,26 @@ describe('travel domain', () => {
     expect(calculateTravelDurationSeconds('Erde', 'Mond')).toBe(60);
   });
 
-  it('scales hydrogen yield with distance and progress', () => {
-    const distance = calculateTravelDistanceKm('Erde', 'Mars');
-
-    expect(calculateHydrogenReward(distance, 0)).toBe(0);
-    expect(calculateHydrogenReward(distance, 0.5)).toBeGreaterThan(0);
-    expect(calculateHydrogenReward(distance, 1)).toBeGreaterThan(
-      calculateHydrogenReward(distance, 0.5),
-    );
+  it('scales hydrogen yield with elapsed travel time', () => {
+    expect(calculateHydrogenReward(0)).toBe(0);
+    expect(calculateHydrogenReward(30)).toBeGreaterThan(0);
+    expect(calculateHydrogenReward(60)).toBeGreaterThan(calculateHydrogenReward(30));
   });
 
   it('formats mission time as hh:mm:ss', () => {
     expect(formatDuration(3661)).toBe('01:01:01');
   });
 
-  it('clamps rewards when progress is outside the valid range', () => {
-    const distance = calculateTravelDistanceKm('Erde', 'Mars');
-
-    expect(calculateTravelRewards(distance, -1)).toEqual(calculateTravelRewards(distance, 0));
-    expect(calculateTravelRewards(distance, 2)).toEqual(calculateTravelRewards(distance, 1));
+  it('clamps rewards when elapsed seconds are outside the valid range', () => {
+    expect(calculateTravelRewards(-1)).toEqual(calculateTravelRewards(0));
+    expect(calculateTravelRewards(2.8)).toEqual(calculateTravelRewards(2));
   });
 
   it('returns zero distance and zero rewards when the ship does not move', () => {
     const distance = calculateTravelDistanceKm('Erde', 'Erde');
 
     expect(distance).toBe(0);
-    expect(calculateTravelRewards(distance, 1)).toEqual({
+    expect(calculateTravelRewards(0)).toEqual({
       aluminium: 0,
       beryllium: 0,
       boron: 0,

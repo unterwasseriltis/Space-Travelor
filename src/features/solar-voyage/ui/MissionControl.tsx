@@ -585,15 +585,17 @@ function ResourcePanel({
         </CardTitle>
         <CardDescription>Collected mission materials. 14 elements tracked.</CardDescription>
       </CardHeader>
-      <CardContent className="grid min-h-0 grow auto-rows-fr grid-cols-3 gap-2 overflow-y-auto pr-1">
+      <CardContent className="grid min-h-0 grow auto-rows-[80px] grid-cols-3 content-start gap-2 overflow-y-auto pr-1">
         {Object.entries(ELEMENTS).map(([key, element]) => (
           <div
             key={key}
-            className="border-border bg-muted/30 hover:bg-muted/50 flex min-h-[74px] flex-col items-center justify-center rounded-xl border px-2 py-1 text-center transition-colors"
+            className="border-border bg-muted/30 hover:bg-muted/50 flex h-full min-h-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border px-2 py-2 text-center transition-colors"
           >
-            <p className="text-accent text-xs font-bold">{element.symbol}</p>
-            <p className="text-2xl font-black text-white">{resources[key as ElementKey]}</p>
-            <p className="mt-1 truncate text-[8px] tracking-[0.1em] text-slate-400 uppercase">
+            <p className="text-accent text-[11px] leading-none font-bold">{element.symbol}</p>
+            <p className="text-xl leading-none font-black text-white tabular-nums">
+              {resources[key as ElementKey]}
+            </p>
+            <p className="w-full truncate text-[8px] leading-none tracking-[0.1em] text-slate-400 uppercase">
               {element.name}
             </p>
           </div>
