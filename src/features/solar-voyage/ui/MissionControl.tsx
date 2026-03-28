@@ -31,9 +31,14 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { celestialBodies } from '@/features/solar-voyage/domain/solar-system';
 import { useSolarVoyage } from '@/features/solar-voyage/hooks/use-solar-voyage';
-import { inventoryItemLabels, shipSlotLabels } from '@/features/solar-voyage/model/game-state';
+import {
+  ELEMENT_SLOT_CONFIG,
+  formatEquipmentEffect,
+  formatFuelValue,
+} from '@/features/solar-voyage/model/equipment';
+import { inventoryItemLabels } from '@/features/solar-voyage/model/game-state';
 import { ELEMENTS } from '@/features/solar-voyage/model/types';
-import type { ElementKey } from '@/features/solar-voyage/model/types';
+import type { ElementKey, EquipmentSlotState } from '@/features/solar-voyage/model/types';
 import { cn } from '@/lib/utils';
 
 type MissionControlProps = {
@@ -72,6 +77,7 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
     startMission,
     selectDestination,
     startTravel,
+    activateEquipmentSlot,
     clearNotification,
     exportSnapshot,
     importSnapshot,
@@ -331,25 +337,40 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
               </div>
 
               <div className="glass-panel hud-outline rounded-[2rem] px-6 py-5">
-                <div className="grid grid-cols-2 gap-5">
+                <div className="grid grid-cols-3 gap-5">
                   <StatusBar
                     label="Rumpf"
                     value={state.ship.hull}
                     accentClassName="[&_[data-slot=progress-indicator]]:bg-red-400"
+                    valueLabel={`${Math.round(state.ship.hull)}%`}
                   />
                   <StatusBar
                     label="Schilde"
                     value={state.ship.shields}
                     accentClassName="[&_[data-slot=progress-indicator]]:bg-sky-400"
+                    valueLabel={`${Math.round(state.ship.shields)}%`}
+                  />
+                  <StatusBar
+                    label="Treibstoff"
+                    value={state.ship.fuel}
+                    maxValue={state.ship.maxFuel}
+                    accentClassName="[&_[data-slot=progress-indicator]]:bg-emerald-400"
+                    valueClassName="w-20"
+                    valueLabel={`${formatFuelValue(state.ship.fuel)} / ${formatFuelValue(state.ship.maxFuel)}`}
                   />
                 </div>
               </div>
             </div>
           </header>
 
-          <section className="grid min-h-0 flex-1 grid-cols-[260px_430px_minmax(0,1fr)] gap-5">
+          <section className="grid min-h-0 flex-1 grid-cols-[320px_430px_minmax(0,1fr)] gap-5">
             <aside className="min-h-0">
-              <CargoPanel className="h-full" items={shipSlotLabels} title="Raumschiff-Ausrustung" />
+              <EquipmentPanel
+                className="h-full"
+                equipmentSlots={state.equipmentSlots}
+                onActivate={activateEquipmentSlot}
+                resources={state.resources}
+              />
             </aside>
 
             <section className="min-h-0">
@@ -698,19 +719,30 @@ function getMinimapMarkerStyle(
 function StatusBar({
   label,
   value,
+  maxValue = 100,
   accentClassName,
+  valueClassName,
+  valueLabel,
 }: {
   label: string;
   value: number;
+  maxValue?: number;
   accentClassName?: string;
+  valueClassName?: string;
+  valueLabel?: string;
 }) {
   return (
     <div className="flex items-center gap-4">
       <span className="text-primary w-20 text-[10px] font-bold tracking-[0.2em] uppercase">
         {label}
       </span>
-      <Progress className={cn('h-3 flex-1 bg-white/10', accentClassName)} value={value} />
-      <span className="w-12 text-center text-xs font-bold text-white/90">{value}%</span>
+      <Progress
+        className={cn('h-3 flex-1 bg-white/10', accentClassName)}
+        value={maxValue > 0 ? (value / maxValue) * 100 : 0}
+      />
+      <span className={cn('w-12 text-center text-xs font-bold text-white/90', valueClassName)}>
+        {valueLabel ?? `${Math.round(value)}%`}
+      </span>
     </div>
   );
 }
@@ -845,6 +877,87 @@ function ResourcePanel({
             </p>
           </div>
         ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+function EquipmentPanel({
+  className,
+  equipmentSlots,
+  onActivate,
+  resources,
+}: {
+  className?: string;
+  equipmentSlots: EquipmentSlotState[];
+  onActivate: (element: ElementKey) => void;
+  resources: Record<ElementKey, number>;
+}) {
+  const slotStateByElement = new Map(equipmentSlots.map((slot) => [slot.element, slot]));
+
+  return (
+    <Card size="sm" className={cn('glass-panel hud-outline h-full min-h-0', className)}>
+      <CardHeader>
+        <CardTitle className="font-[family-name:var(--font-display)] text-xl tracking-[0.18em] uppercase">
+          Equipment
+        </CardTitle>
+        <CardDescription>One slot per element. Unlock at 100 units collected.</CardDescription>
+      </CardHeader>
+      <CardContent className="flex min-h-0 grow flex-col gap-3 overflow-y-auto pr-1">
+        {ELEMENT_SLOT_CONFIG.map((config) => {
+          const slot = slotStateByElement.get(config.element);
+          const resourceAmount = resources[config.element];
+          const isUnlocked = slot?.unlocked ?? false;
+          const canActivate = isUnlocked && resourceAmount >= config.activationCost;
+
+          return (
+            <div
+              key={config.element}
+              className="border-border bg-muted/35 flex flex-col gap-3 rounded-2xl border p-4"
+              data-testid={`equipment-slot-${config.element}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-accent text-xs font-bold tracking-[0.24em] uppercase">
+                    {ELEMENTS[config.element].symbol}
+                  </p>
+                  <h4 className="mt-1 text-sm font-semibold text-white">
+                    {ELEMENTS[config.element].name}
+                  </h4>
+                </div>
+                <Badge className={isUnlocked ? 'bg-emerald-500/15 text-emerald-300' : ''}>
+                  {isUnlocked ? 'Freigeschaltet' : 'Gesperrt'}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+                <p>Bestand: {resourceAmount}</p>
+                <p>Kosten: {config.activationCost}</p>
+                <p>Effekt: {formatEquipmentEffect(config)}</p>
+                <p>Ausloesungen: {slot?.activationCount ?? 0}</p>
+              </div>
+
+              <p className="text-[11px] text-slate-400">
+                {isUnlocked
+                  ? canActivate
+                    ? 'Slot bereit. Aktivierung verbraucht 100 Einheiten.'
+                    : 'Freigeschaltet, aber aktuell nicht genug Bestand.'
+                  : `Freischaltung bei ${config.unlockThreshold} Einheiten.`}
+              </p>
+
+              <Button
+                aria-label={`${ELEMENTS[config.element].name} slot aktivieren`}
+                className="h-10 tracking-[0.14em] uppercase"
+                disabled={!canActivate}
+                onClick={() => onActivate(config.element)}
+                type="button"
+                variant={config.effectKind === 'fuel' ? 'default' : 'secondary'}
+              >
+                {config.effectKind === 'fuel' ? 'Refill' : 'Activate'}
+              </Button>
+            </div>
+          );
+        })}
       </CardContent>
     </Card>
   );

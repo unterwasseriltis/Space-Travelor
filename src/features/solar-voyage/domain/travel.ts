@@ -1,5 +1,6 @@
 import { KM_PER_AU, calculateDistanceAu } from '@/features/solar-voyage/domain/solar-system';
 import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
+import { calculateRequiredFuel } from '@/features/solar-voyage/model/equipment';
 import { ELEMENTS } from '@/features/solar-voyage/model/types';
 import type { ElementKey, ResourceState } from '@/features/solar-voyage/model/types';
 
@@ -14,6 +15,10 @@ export function calculateTravelDurationSeconds(from: BodyName, to: BodyName) {
 
 export function calculateTravelDistanceKm(from: BodyName, to: BodyName) {
   return calculateDistanceAu(from, to) * KM_PER_AU;
+}
+
+export function calculateTravelFuelCost(from: BodyName, to: BodyName) {
+  return calculateRequiredFuel(calculateTravelDurationSeconds(from, to));
 }
 
 export function calculateTravelRewards(elapsedSeconds: number): ResourceState {

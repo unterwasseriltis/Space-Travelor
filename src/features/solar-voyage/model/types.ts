@@ -23,9 +23,19 @@ export type ElementKey = keyof typeof ELEMENTS;
 
 export type ResourceState = Record<ElementKey, number>;
 
+export type EquipmentSlotState = {
+  element: ElementKey;
+  unlocked: boolean;
+  activationCount: number;
+};
+
+export type EquipmentEffectKind = 'fuel' | 'placeholder';
+
 export type ShipState = {
   hull: number;
   shields: number;
+  fuel: number;
+  maxFuel: number;
 };
 
 export type TravelState = {
@@ -44,6 +54,7 @@ export type GameState = {
   selectedDestination: BodyName | '';
   ship: ShipState;
   resources: ResourceState;
+  equipmentSlots: EquipmentSlotState[];
   travel: TravelState | null;
   notification: string | null;
 };
@@ -54,5 +65,7 @@ export type GameAction =
   | { type: 'destination/selected'; destination: BodyName | '' }
   | { type: 'travel/started' }
   | { type: 'travel/ticked' }
+  | { type: 'equipment/slotUnlocked'; element: ElementKey }
+  | { type: 'equipment/slotActivated'; element: ElementKey }
   | { type: 'notification/cleared' }
   | { type: 'state/restored'; source: 'autosave' | 'import'; state: GameState };

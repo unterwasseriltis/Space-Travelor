@@ -1,8 +1,12 @@
 import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
+import {
+  createInitialEquipmentSlots,
+  INITIAL_FUEL,
+  MAX_FUEL,
+} from '@/features/solar-voyage/model/equipment';
 import { ELEMENTS } from '@/features/solar-voyage/model/types';
 import type { ElementKey, GameState } from '@/features/solar-voyage/model/types';
 
-export const shipSlotLabels = Array.from({ length: 6 }, (_, index) => `Slot ${index + 1}`);
 export const inventoryItemLabels = Array.from({ length: 9 }, (_, index) => `Item ${index + 1}`);
 
 export function getInitialDestination(currentLocation: BodyName): BodyName {
@@ -26,8 +30,11 @@ export function createInitialGameState(): GameState {
     ship: {
       hull: 100,
       shields: 100,
+      fuel: INITIAL_FUEL,
+      maxFuel: MAX_FUEL,
     },
     resources: createInitialResources(),
+    equipmentSlots: createInitialEquipmentSlots(),
     travel: null,
     notification: null,
   };
