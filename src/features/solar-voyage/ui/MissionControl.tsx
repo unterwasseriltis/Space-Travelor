@@ -2,7 +2,6 @@ import { useEffect, useEffectEvent } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -48,64 +47,47 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
 
   if (state.phase === 'menu') {
     return (
-      <main className="starfield relative min-h-screen overflow-hidden bg-[#030611]">
+      <main className="relative min-h-screen w-full overflow-hidden bg-[#030611]">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-30"
+          className="fixed inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${backgroundImage})` }}
         />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,6,17,0.92)_0%,rgba(3,6,17,0.72)_42%,rgba(3,6,17,0.2)_100%)]" />
-        <div className="absolute inset-y-0 right-[-8%] hidden w-[56vw] min-w-[420px] xl:block">
-          <div className="image-frame h-full w-full rounded-none border-0 bg-transparent p-0 shadow-none">
-            <img
-              alt="Solar Voyage cockpit"
-              className="h-full w-full object-cover object-center"
-              src={backgroundImage}
-            />
-          </div>
-        </div>
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,6,17,0.92)_0%,rgba(3,6,17,0.6)_42%,rgba(3,6,17,0.1)_100%)]" />
+
+        <div className="starfield fixed inset-0 opacity-40" />
 
         <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl items-center px-6 py-10 md:px-10">
-          <div className="grid w-full items-center gap-10 xl:grid-cols-[minmax(0,540px)_1fr]">
+          <div className="grid w-full items-center gap-10 xl:grid-cols-[minmax(0,740px)_1fr]">
             <section className="animate-rise flex flex-col gap-8">
               <div className="flex flex-col gap-4">
                 <Badge className="w-fit bg-primary/15 text-primary">Mission Control</Badge>
                 <p className="text-sm uppercase tracking-[0.5em] text-primary/80">Launch Interface</p>
-                <h1 className="font-[family-name:var(--font-display)] text-5xl leading-none tracking-[0.18em] text-white md:text-7xl">
+                <h1 className="font-[family-name:var(--font-display)] text-5xl leading-none tracking-[0.18em] text-white md:text-8xl">
                   Solar Voyage
                 </h1>
-                <p className="max-w-lg text-lg leading-8 text-slate-300">
-                  Step into the original cockpit artwork and chart the next burn. The bridge is live again, with the
-                  existing ship scene driving the whole first impression instead of hiding behind the UI.
+                <p className="max-w-2xl text-xl leading-9 text-slate-300">
+                  Step into the restored cockpit and chart the next burn. The bridge is live again, with the
+                  original artwork driving the whole experience. Navigation, telemetry, and resource management
+                  are online and ready for the next system jump.
                 </p>
               </div>
 
               <div className="flex flex-col gap-3 sm:max-w-sm">
-                <Button className="h-13 text-base font-semibold uppercase tracking-[0.2em]" onClick={startMission}>
+                <Button className="h-14 text-lg font-bold uppercase tracking-[0.2em]" onClick={startMission}>
                   New Mission
                 </Button>
-                <Button className="h-13 text-base uppercase tracking-[0.2em]" variant="secondary" disabled>
+                <Button className="h-14 text-lg uppercase tracking-[0.2em]" variant="secondary" disabled>
                   Load Mission
                 </Button>
-                <Button className="h-13 text-base uppercase tracking-[0.2em]" variant="outline" disabled>
+                <Button className="h-14 text-lg uppercase tracking-[0.2em]" variant="outline" disabled>
                   Exit Sequence
                 </Button>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-6 sm:grid-cols-3">
                 <LaunchMetric label="Bridge" value="Online" />
                 <LaunchMetric label="Visual Feed" value="Restored" />
                 <LaunchMetric label="Stack" value="React TS" />
-              </div>
-            </section>
-
-            <section className="animate-rise xl:hidden">
-              <div className="image-frame relative mx-auto aspect-[3/4] max-w-md overflow-hidden">
-                <img
-                  alt="Solar Voyage cockpit"
-                  className="h-full w-full object-cover object-center"
-                  src={backgroundImage}
-                />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,6,17,0)_45%,rgba(3,6,17,0.78)_100%)]" />
               </div>
             </section>
           </div>
@@ -115,37 +97,60 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden px-4 py-6 md:px-8">
+    <main className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto bg-[#030611]">
       <div
-        className="absolute inset-0 bg-cover bg-center opacity-22 blur-[2px]"
+        className="fixed inset-0 bg-cover bg-center transition-opacity duration-1000"
         style={{ backgroundImage: `url(${backgroundImage})` }}
       />
-      <div className="starfield absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,17,0.72),rgba(4,7,17,0.96))]" />
+      <div className="starfield fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(4,7,17,0.1),rgba(4,7,17,0.4))]" />
 
-      <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-6">
-        <header className="glass-panel hud-outline grid gap-4 rounded-[calc(var(--radius)+0.35rem)] p-4 md:grid-cols-[1fr_auto_1fr] md:items-center">
-          <div className="flex items-center gap-3">
-            <Badge className="bg-primary/15 text-primary">Location</Badge>
-            <span className="text-lg font-semibold text-white">{state.currentLocation}</span>
+      <div className="relative z-10 mx-auto flex min-h-screen w-full flex-col gap-6 p-4 md:p-8">
+        <header className="flex flex-col items-center justify-between gap-6 md:flex-row">
+          <div className="order-2 md:order-1">
+            <MapPanel currentLocation={state.currentLocation} currentPosition={currentPosition} />
           </div>
-          <div className="justify-self-center text-center">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Mission Time</p>
-            <p className="font-[family-name:var(--font-display)] text-2xl text-white">{missionTimerLabel}</p>
+
+          <div className="order-1 flex flex-col items-center gap-4 md:order-2">
+            <div className="glass-panel hud-outline flex items-center gap-6 rounded-full px-8 py-3">
+              <div className="flex items-center gap-3 border-r border-border pr-6">
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Standort</span>
+                <span className="text-lg font-semibold text-white">{state.currentLocation}</span>
+              </div>
+              <div className="flex items-center gap-3 pl-2">
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Missionszeit</span>
+                <span className="font-[family-name:var(--font-display)] text-2xl text-white">{missionTimerLabel}</span>
+              </div>
+              <div className="ml-4 flex items-center gap-2 border-l border-border pl-6">
+                <Badge className="bg-accent/20 text-accent">Status</Badge>
+                <span className="text-sm font-medium text-slate-200">{state.travel ? 'In transit' : 'Docked'}</span>
+              </div>
+            </div>
+
+            <div className="flex w-full max-w-md flex-col gap-4">
+              <StatusBar label="Rumpf" value={state.ship.hull} accentClassName="[&_[data-slot=progress-indicator]]:bg-red-400" />
+              <StatusBar
+                label="Schilde"
+                value={state.ship.shields}
+                accentClassName="[&_[data-slot=progress-indicator]]:bg-sky-400"
+              />
+            </div>
           </div>
-          <div className="flex items-center justify-start gap-2 md:justify-end">
-            <Badge className="bg-accent/20 text-accent">Status</Badge>
-            <span className="text-sm text-slate-200">{state.travel ? 'In transit' : 'Docked'}</span>
+
+          <div className="order-3">
+            <ResourcePanel
+              hydrogen={state.resources.hydrogen}
+              helium={state.resources.helium}
+              lithium={state.resources.lithium}
+            />
           </div>
         </header>
 
-        <section className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)_320px]">
-          <aside className="flex flex-col gap-6">
-            <MapPanel currentLocation={state.currentLocation} currentPosition={currentPosition} />
-            <ShipPanel hull={state.ship.hull} shields={state.ship.shields} />
+        <section className="mt-auto grid gap-6 xl:grid-cols-[1fr_500px_1fr]">
+          <aside className="flex flex-col justify-end gap-6">
+            <CargoPanel items={shipSlotLabels} title="Raumschiff-Ausrüstung" />
           </aside>
 
-          <section className="flex flex-col gap-6">
-            <BridgePanel backgroundImage={backgroundImage} currentLocation={state.currentLocation} />
+          <section className="flex flex-col justify-end gap-6">
             <NavigationPanel
               coordinatesLabel={coordinatesLabel}
               destinations={availableDestinations}
@@ -164,8 +169,6 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
             <CargoPanel items={inventoryItemLabels} title="Inventory" />
           </aside>
         </section>
-
-        <CargoPanel items={shipSlotLabels} title="Ship Loadout" />
       </div>
     </main>
   );
@@ -180,42 +183,7 @@ function LaunchMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function BridgePanel({
-  backgroundImage,
-  currentLocation,
-}: {
-  backgroundImage: string;
-  currentLocation: keyof typeof celestialBodies;
-}) {
-  return (
-    <section className="image-frame animate-rise relative min-h-[360px] overflow-hidden">
-      <img
-        alt="Solar Voyage bridge view"
-        className="h-full w-full object-cover object-center"
-        src={backgroundImage}
-      />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,17,0.08)_0%,rgba(4,7,17,0.34)_45%,rgba(4,7,17,0.92)_100%)]" />
-      <div className="absolute inset-x-0 top-0 flex items-center justify-between px-5 py-4">
-        <Badge className="bg-primary/15 text-primary">Bridge Feed</Badge>
-        <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-200">
-          Sector {currentLocation}
-        </span>
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 p-5 md:p-6">
-        <div className="max-w-md">
-          <p className="text-xs uppercase tracking-[0.32em] text-primary/85">Visual Anchor</p>
-          <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl uppercase tracking-[0.18em] text-white">
-            Existing Cockpit Restored
-          </h2>
-          <p className="mt-3 text-sm leading-7 text-slate-200">
-            The original bridge art is back as the mission’s centerpiece, with overlays kept light so the cockpit and
-            viewport remain readable.
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
+
 
 function MapPanel({
   currentLocation,
@@ -225,70 +193,44 @@ function MapPanel({
   currentPosition: { x: number; y: number };
 }) {
   return (
-    <Card className="glass-panel hud-outline overflow-hidden">
-      <CardHeader>
-        <CardTitle className="font-[family-name:var(--font-display)] text-xl uppercase tracking-[0.18em]">
-          Solar Map
-        </CardTitle>
-        <CardDescription>2D tactical overview of the system.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="relative aspect-square rounded-[1.4rem] border border-primary/15 bg-[radial-gradient(circle_at_center,#09213f_0%,#02050d_72%)] p-6">
-          <div className="absolute left-1/2 top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-300 shadow-[0_0_30px_rgba(255,209,102,0.75)]" />
-          {Object.entries(celestialBodies).map(([name, body]) => (
-            <div
-              key={name}
-              className="absolute"
-              style={{
-                left: `calc(50% + ${body.x * 10}px)`,
-                top: `calc(50% + ${body.y * 10}px)`,
-              }}
-            >
-              <div
-                className={cn(
-                  'size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20',
-                  name === currentLocation && 'ring-4 ring-primary/30',
-                )}
-                style={{ backgroundColor: body.color }}
-              />
-              <span className="mt-2 block -translate-x-1/2 text-center text-[10px] uppercase tracking-[0.16em] text-slate-200">
-                {name}
-              </span>
-            </div>
-          ))}
+    <div className="glass-panel hud-outline flex flex-col items-center gap-3 overflow-hidden rounded-[2rem] p-4 text-center">
+      <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Sonnensystem (2D)</span>
+      <div className="relative size-48 rounded-full border border-primary/25 bg-[radial-gradient(circle_at_center,#09213f_0%,#02050d_72%)]">
+        <div className="absolute left-1/2 top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-300 shadow-[0_0_20px_rgba(255,209,102,0.65)]" />
+        {Object.entries(celestialBodies).map(([name, body]) => (
           <div
-            className="absolute size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary bg-primary/20 shadow-[0_0_22px_rgba(107,243,255,0.65)]"
+            key={name}
+            className="absolute"
             style={{
-              left: `calc(50% + ${currentPosition.x * 10}px)`,
-              top: `calc(50% + ${currentPosition.y * 10}px)`,
+              left: `calc(50% + ${body.x * 6}px)`,
+              top: `calc(50% + ${body.y * 6}px)`,
             }}
-          />
-        </div>
-      </CardContent>
-    </Card>
+          >
+            <div
+              className={cn(
+                'size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20',
+                name === currentLocation && 'ring-2 ring-primary/40',
+              )}
+              style={{ backgroundColor: body.color }}
+            />
+            <span className="mt-1 block -translate-x-1/2 text-center text-[8px] uppercase tracking-[0.1em] text-slate-300">
+              {name}
+            </span>
+          </div>
+        ))}
+        <div
+          className="absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary bg-primary/20 shadow-[0_0_15px_rgba(107,243,255,0.65)]"
+          style={{
+            left: `calc(50% + ${currentPosition.x * 6}px)`,
+            top: `calc(50% + ${currentPosition.y * 6}px)`,
+          }}
+        />
+      </div>
+    </div>
   );
 }
 
-function ShipPanel({ hull, shields }: { hull: number; shields: number }) {
-  return (
-    <Card className="glass-panel hud-outline">
-      <CardHeader>
-        <CardTitle className="font-[family-name:var(--font-display)] text-xl uppercase tracking-[0.18em]">
-          Ship Status
-        </CardTitle>
-        <CardDescription>Core integrity and shield charge.</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-5">
-        <StatusBar label="Hull" value={hull} accentClassName="[&_[data-slot=progress-indicator]]:bg-red-400" />
-        <StatusBar
-          label="Shields"
-          value={shields}
-          accentClassName="[&_[data-slot=progress-indicator]]:bg-sky-400"
-        />
-      </CardContent>
-    </Card>
-  );
-}
+
 
 function StatusBar({
   label,
@@ -300,12 +242,10 @@ function StatusBar({
   accentClassName?: string;
 }) {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between text-sm uppercase tracking-[0.18em] text-slate-300">
-        <span>{label}</span>
-        <span>{value}%</span>
-      </div>
-      <Progress className={cn('h-3 bg-white/8', accentClassName)} value={value} />
+    <div className="flex items-center gap-4">
+      <span className="w-20 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{label}</span>
+      <Progress className={cn('h-3 flex-1 bg-white/10', accentClassName)} value={value} />
+      <span className="w-12 text-center text-xs font-bold text-white/90">{value}%</span>
     </div>
   );
 }
@@ -332,14 +272,14 @@ function NavigationPanel({
   travelProgress: number;
 }) {
   return (
-    <Card className="glass-panel hud-outline min-h-[360px]">
-      <CardHeader>
-        <CardTitle className="font-[family-name:var(--font-display)] text-xl uppercase tracking-[0.18em]">
+    <div className="glass-panel hud-outline flex min-h-[360px] flex-col gap-6 rounded-[2rem] p-6">
+      <div className="flex flex-col gap-1">
+        <h3 className="font-[family-name:var(--font-display)] text-xl uppercase tracking-[0.2em] text-white">
           Navigation
-        </CardTitle>
-        <CardDescription>Plot a course and monitor the ship while it accelerates.</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-6">
+        </h3>
+        <p className="text-xs text-slate-400">Plot a course and monitor the ship while it accelerates.</p>
+      </div>
+      <div className="flex flex-col gap-6">
         <div className="rounded-2xl border border-border bg-muted/45 p-4">
           <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Current Coordinates</p>
           <p className="mt-2 font-mono text-lg text-white">{coordinatesLabel}</p>
@@ -389,8 +329,8 @@ function NavigationPanel({
             </p>
           </>
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -423,23 +363,23 @@ function ResourcePanel({ resources }: { resources: Record<ElementKey, number> })
 
 function CargoPanel({ items, title }: { items: string[]; title: string }) {
   return (
-    <Card className="glass-panel hud-outline">
-      <CardHeader>
-        <CardTitle className="font-[family-name:var(--font-display)] text-xl uppercase tracking-[0.18em]">
+    <div className="glass-panel hud-outline rounded-[2rem] p-6">
+      <div className="mb-6 flex flex-col gap-1">
+        <h3 className="font-[family-name:var(--font-display)] text-xl uppercase tracking-[0.2em] text-white">
           {title}
-        </CardTitle>
-        <CardDescription>Placeholder slots prepared for future systems.</CardDescription>
-      </CardHeader>
-      <CardContent className="grid grid-cols-3 gap-3">
+        </h3>
+        <p className="text-xs text-slate-400">Placeholder slots prepared for future systems.</p>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
         {items.map((item) => (
           <div
             key={item}
-            className="flex aspect-square items-center justify-center rounded-2xl border border-dashed border-primary/25 bg-white/5 px-3 text-center text-sm font-medium uppercase tracking-[0.12em] text-slate-200 transition-transform duration-200 hover:scale-[1.02] hover:border-accent/40 hover:bg-white/8"
+            className="flex aspect-square items-center justify-center rounded-2xl border border-dashed border-primary/25 bg-white/5 px-3 text-center text-[10px] font-medium uppercase tracking-[0.12em] text-slate-200 transition-transform duration-200 hover:scale-[1.02] hover:border-accent/40 hover:bg-white/8"
           >
             {item}
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
