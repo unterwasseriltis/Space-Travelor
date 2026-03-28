@@ -3,6 +3,7 @@ import {
   calculateHydrogenReward,
   calculateTravelDistanceKm,
   calculateTravelDurationSeconds,
+  calculateTravelFuelCost,
   formatCountdown,
   formatDuration,
 } from '@/features/solar-voyage/domain/travel';
@@ -16,6 +17,13 @@ describe('travel domain', () => {
     expect(calculateHydrogenReward(0)).toBe(0);
     expect(calculateHydrogenReward(30)).toBeGreaterThan(0);
     expect(calculateHydrogenReward(60)).toBeGreaterThan(calculateHydrogenReward(30));
+  });
+
+  it('derives fuel cost from travel duration', () => {
+    expect(calculateTravelFuelCost('Erde', 'Mond')).toBeGreaterThan(0);
+    expect(calculateTravelFuelCost('Erde', 'Uranus')).toBeGreaterThan(
+      calculateTravelFuelCost('Erde', 'Mond'),
+    );
   });
 
   it('formats mission time as hh:mm:ss', () => {

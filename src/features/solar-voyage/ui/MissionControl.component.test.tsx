@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {
@@ -76,6 +76,35 @@ describe('MissionControl component', () => {
 
     expect(screen.getByText(/navigation/i)).toBeInTheDocument();
     expect(screen.getByText('00:00:42')).toBeInTheDocument();
+  });
+
+  it('renders all element slots and activates the hydrogen refill slot', async () => {
+    const user = userEvent.setup();
+    const savedState = {
+      ...createInitialGameState(),
+      phase: 'mission' as const,
+      resources: {
+        ...createInitialGameState().resources,
+        hydrogen: 100,
+      },
+      ship: {
+        ...createInitialGameState().ship,
+        fuel: 90,
+      },
+    };
+
+    localStorage.setItem(GAME_STATE_STORAGE_KEY, serializeGameStateSnapshot(savedState));
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    await user.click(screen.getByRole('button', { name: /load mission/i }));
+    await user.click(screen.getByRole('button', { name: /wasserstoff slot aktivieren/i }));
+
+    expect(screen.getAllByRole('button', { name: /slot aktivieren/i })).toHaveLength(14);
+    expect(screen.getByText('95 / 100')).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('equipment-slot-hydrogen')).getByText(/bestand: 0/i),
+    ).toBeInTheDocument();
   });
 
   it('exports the current mission snapshot from the settings dialog', async () => {
