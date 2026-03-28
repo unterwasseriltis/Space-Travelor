@@ -9,7 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import { celestialBodies } from '@/features/solar-voyage/domain/solar-system';
 import { useSolarVoyage } from '@/features/solar-voyage/hooks/use-solar-voyage';
 import { inventoryItemLabels, shipSlotLabels } from '@/features/solar-voyage/model/game-state';
-import { ElementKey, ELEMENTS } from '@/features/solar-voyage/model/types';
+import { ELEMENTS } from '@/features/solar-voyage/model/types';
+import type { ElementKey } from '@/features/solar-voyage/model/types';
 import { cn } from '@/lib/utils';
 
 type MissionControlProps = {
@@ -57,7 +58,7 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
     return () => {
       window.clearTimeout(timeout);
     };
-  }, [clearNotificationEvent, state.notification]);
+  }, [state.notification]);
 
   if (state.phase === 'menu') {
     return (

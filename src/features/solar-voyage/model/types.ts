@@ -1,4 +1,4 @@
-import { BodyName } from '@/features/solar-voyage/domain/solar-system';
+import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
 
 export type GamePhase = 'menu' | 'mission';
 

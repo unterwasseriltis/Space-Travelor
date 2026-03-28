@@ -1,4 +1,5 @@
 import { useEffect, useReducer } from 'react';
+import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
 
 import { gameReducer } from '@/features/solar-voyage/model/game-reducer';
 import { createInitialGameState } from '@/features/solar-voyage/model/game-state';
@@ -10,7 +11,6 @@ import {
   getTravelCountdownLabel,
   getTravelProgress,
 } from '@/features/solar-voyage/model/selectors';
-import { BodyName } from '@/features/solar-voyage/domain/solar-system';
 
 export function useSolarVoyage() {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);

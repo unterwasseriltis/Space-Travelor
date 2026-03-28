@@ -1,6 +1,6 @@
 import { celestialBodies, formatCoordinates, interpolateCoordinates } from '@/features/solar-voyage/domain/solar-system';
 import { formatCountdown, formatDuration } from '@/features/solar-voyage/domain/travel';
-import { GameState } from '@/features/solar-voyage/model/types';
+import type { GameState } from '@/features/solar-voyage/model/types';
 
 export function getAvailableDestinations(currentLocation: GameState['currentLocation']) {
   return Object.keys(celestialBodies).filter((body) => body !== currentLocation) as GameState['currentLocation'][];

@@ -1,5 +1,7 @@
-import { BodyName, KM_PER_AU, calculateDistanceAu } from '@/features/solar-voyage/domain/solar-system';
-import { ElementKey, ELEMENTS, ResourceState } from '@/features/solar-voyage/model/types';
+import { KM_PER_AU, calculateDistanceAu } from '@/features/solar-voyage/domain/solar-system';
+import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
+import { ELEMENTS } from '@/features/solar-voyage/model/types';
+import type { ElementKey, ResourceState } from '@/features/solar-voyage/model/types';
 
 export function calculateTravelDurationSeconds(from: BodyName, to: BodyName) {
   const distanceAu = calculateDistanceAu(from, to);

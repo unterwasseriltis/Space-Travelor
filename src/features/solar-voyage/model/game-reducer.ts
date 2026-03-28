@@ -1,6 +1,6 @@
 import { calculateTravelDistanceKm, calculateTravelDurationSeconds, calculateTravelRewards } from '@/features/solar-voyage/domain/travel';
 import { createInitialGameState, createInitialResources, getInitialDestination } from '@/features/solar-voyage/model/game-state';
-import { ElementKey, GameAction, GameState } from '@/features/solar-voyage/model/types';
+import type { ElementKey, GameAction, GameState } from '@/features/solar-voyage/model/types';
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
