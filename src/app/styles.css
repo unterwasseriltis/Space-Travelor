@@ -49,13 +49,13 @@
 }
 
 @utility glass-panel {
-  @apply border border-border bg-card/85 shadow-[0_0_40px_rgba(19,119,156,0.2)] backdrop-blur-xl;
+  @apply border border-border bg-card/65 shadow-[0_0_40px_rgba(19,119,156,0.18)] backdrop-blur-md;
 }
 
 @utility hud-outline {
   box-shadow:
-    0 0 0 1px rgba(107, 243, 255, 0.15),
-    0 0 24px rgba(107, 243, 255, 0.18);
+    0 0 0 1px rgba(107, 243, 255, 0.12),
+    0 0 20px rgba(107, 243, 255, 0.15);
 }
 
 @utility image-frame {
