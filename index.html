@@ -1,138 +1,16 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23050813'/%3E%3Ccircle cx='50' cy='50' r='18' fill='%23ffd166'/%3E%3Cpath d='M18 52h64M50 20v60' stroke='%236bf3ff' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
     <title>Solar Voyage</title>
-    <link rel="stylesheet" href="./css/style.css">
-</head>
-<body>
-    <!-- Startmenü -->
-    <div id="menu-screen" class="screen">
-        <h1>Solar Voyage</h1>
-        <button id="new-game">Neues Spiel</button>
-        <button id="load-game">Spiel Laden</button>
-        <button id="exit-game">Spiel Beenden</button>
-    </div>
-
-    <!-- Spiel-Screen -->
-    <div id="game-screen" class="screen hidden">
-        
-        <!-- Top-Bar -->
-        <div class="top-bar">
-            <span id="location">Standort: Erde</span>
-            <span id="timer">Missionszeit: 00:00:00</span>
-        </div>
-
-        <!-- 2D Karte oben links -->
-        <div class="map-container">
-            <canvas id="solar-map" width="280" height="280"></canvas>
-            <div class="map-label">Sonnensystem (2D)</div>
-        </div>
-
-        <!-- Schiff-Status (Rumpf + Schilde) -->
-        <div class="ship-status">
-            <div class="status-bar">
-                <span class="status-label">Rumpf</span>
-                <div class="bar-container">
-                    <div id="hull-bar" class="bar hull-bar" style="width: 100%;"></div>
-                </div>
-                <span id="hull-value" class="status-value">100 %</span>
-            </div>
-            <div class="status-bar">
-                <span class="status-label">Schilde</span>
-                <div class="bar-container">
-                    <div id="shield-bar" class="bar shield-bar" style="width: 100%;"></div>
-                </div>
-                <span id="shield-value" class="status-value">100 %</span>
-            </div>
-        </div>
-
-        <!-- Ressourcen-Counter oben rechts -->
-        <div class="resources-counter">
-            <div class="resource-item">
-                <span class="resource-symbol">H</span>
-                <span id="hydrogen" class="resource-value">0</span>
-            </div>
-            <div class="resource-item">
-                <span class="resource-symbol">He</span>
-                <span id="helium" class="resource-value">0</span>
-            </div>
-            <div class="resource-item">
-                <span class="resource-symbol">Li</span>
-                <span id="lithium" class="resource-value">0</span>
-            </div>
-    <div class="resource-item">
-      <span class="resource-symbol">Be</span>
-      <span id="beryllium" class="resource-value">0</span>
-    </div>
-    <div class="resource-item">
-      <span class="resource-symbol">B</span>
-      <span id="boron" class="resource-value">0</span>
-    </div>
-    <div class="resource-item">
-      <span class="resource-symbol">C</span>
-      <span id="carbon" class="resource-value">0</span>
-    </div>
-    <div class="resource-item">
-      <span class="resource-symbol">N</span>
-      <span id="nitrogen" class="resource-value">0</span>
-    </div>
-    <div class="resource-item">
-      <span class="resource-symbol">O</span>
-      <span id="oxygen" class="resource-value">0</span>
-    </div>
-    <div class="resource-item">
-      <span class="resource-symbol">F</span>
-      <span id="fluorine" class="resource-value">0</span>
-    </div>
-    <div class="resource-item">
-      <span class="resource-symbol">Ne</span>
-      <span id="neon" class="resource-value">0</span>
-    </div>
-    <div class="resource-item">
-      <span class="resource-symbol">Na</span>
-      <span id="sodium" class="resource-value">0</span>
-    </div>
-    <div class="resource-item">
-      <span class="resource-symbol">Mg</span>
-      <span id="magnesium" class="resource-value">0</span>
-    </div>
-    <div class="resource-item">
-      <span class="resource-symbol">Al</span>
-      <span id="aluminium" class="resource-value">0</span>
-    </div>
-    <div class="resource-item">
-      <span class="resource-symbol">Si</span>
-      <span id="silicon" class="resource-value">0</span>
-    </div>
-        </div>
-
-        <!-- Hauptspiel-Layout -->
-        <div class="game-container">
-
-            <!-- Linke Seite: Raumschiff-Ausrüstung -->
-            <div class="panel left-panel" id="ship-slots"></div>
-
-            <!-- Mitte: Navigation -->
-            <div class="panel center-panel">
-                <h2>Navigation</h2>
-                <div id="current-coordinates" class="coordinates">Koordinaten: —</div>
-                <select id="destination-select"></select>
-                <button id="accelerate-btn">Beschleunigen</button>
-                <div id="travel-info" class="hidden"></div>
-            </div>
-
-            <!-- Rechte Seite: Inventar -->
-            <div class="panel right-panel" id="inventory"></div>
-
-        </div>
-
-        <!-- Hintergrundbild -->
-        <img id="background-image" src="./assets/background-game.jpg" alt="Hintergrund">
-
-    </div>
-
-    <script type="module" src="./js/script.js"></script>
-</body>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
