@@ -33,7 +33,7 @@ import type {
 
 const LEGACY_GAME_STATE_STORAGE_KEY = 'space-travelor.game-state.v1';
 export const GAME_STATE_STORAGE_KEY = 'space-travelor.game-state.v2';
-const GAME_STATE_SNAPSHOT_VERSION = 4;
+const GAME_STATE_SNAPSHOT_VERSION = 5;
 
 type GameStateSnapshot = {
   version: typeof GAME_STATE_SNAPSHOT_VERSION;
@@ -120,6 +120,7 @@ function validateGameStateSnapshot(snapshot: unknown): GameState {
   if ('version' in snapshotRecord) {
     if (
       snapshotRecord.version !== GAME_STATE_SNAPSHOT_VERSION &&
+      snapshotRecord.version !== 4 &&
       snapshotRecord.version !== 3 &&
       snapshotRecord.version !== 2 &&
       snapshotRecord.version !== 1
@@ -164,7 +165,7 @@ function validateGameState(gameState: unknown): GameState {
   );
   const travel = validateTravelState(stateRecord.travel, knownLocationIds, discoveredLocations);
   const notification = validateNotification(stateRecord.notification);
-  const arrivalDialog = validateArrivalDialog(stateRecord.arrivalDialog);
+  const arrivalDialog = validateArrivalDialog(stateRecord.arrivalDialog, knownLocationIds);
   const specialResources = validateSpecialResourceState(stateRecord.specialResources);
   const nextScannerDiscoveryId = validateNextScannerDiscoveryId(
     stateRecord.nextScannerDiscoveryId,
@@ -452,14 +453,31 @@ function validateNotification(value: unknown) {
   throw new Error('Save notification is invalid.');
 }
 
-function validateArrivalDialog(value: unknown): ArrivalDialogState {
+function validateArrivalDialog(
+  value: unknown,
+  knownLocationIds: Set<LocationId>,
+): ArrivalDialogState {
   if (value === null || value === undefined) {
     return null;
   }
 
   const dialogRecord = getRecord(value, 'Arrival dialog is invalid.');
+  const locationId =
+    dialogRecord.locationId === undefined || dialogRecord.locationId === null
+      ? null
+      : validateLocationId(
+          dialogRecord.locationId,
+          knownLocationIds,
+          'Arrival dialog location is invalid.',
+        );
+  const label =
+    dialogRecord.label === undefined
+      ? (locationId ?? 'Unknown Destination')
+      : validateString(dialogRecord.label, 'Arrival dialog label is invalid.');
 
   return {
+    label,
+    locationId,
     message: validateString(dialogRecord.message, 'Arrival dialog message is invalid.'),
   };
 }

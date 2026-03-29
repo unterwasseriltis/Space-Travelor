@@ -67,11 +67,11 @@ describe('selectors', () => {
     const state: GameState = {
       ...createInitialGameState(),
       currentCoordinatesOverride: { x: 2.345, y: -1.111 },
-      currentLocationLabelOverride: 'Deep Space Hold',
+      currentLocationLabelOverride: 'Tiefer Weltraum',
     };
 
     expect(getCurrentPosition(state)).toEqual({ x: 2.345, y: -1.111 });
     expect(getCurrentCoordinatesLabel(state)).toBe('X: 2.345 AU | Y: -1.111 AU');
-    expect(getCurrentLocationLabel(state)).toBe('Deep Space Hold');
+    expect(getCurrentLocationLabel(state)).toBe('Tiefer Weltraum');
   });
 });

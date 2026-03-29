@@ -78,6 +78,8 @@ export type ScannerDiscoveryState = Coordinates & {
 };
 
 export type ArrivalDialogState = {
+  label: string;
+  locationId: LocationId | null;
   message: string;
 } | null;
 

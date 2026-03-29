@@ -81,7 +81,7 @@ describe('game persistence', () => {
     const restoredState = loadStoredGameState();
 
     expect(restoredState?.ship.fuel).toBe(100);
-    expect(localStorage.getItem(GAME_STATE_STORAGE_KEY)).toContain('"version": 4');
+    expect(localStorage.getItem(GAME_STATE_STORAGE_KEY)).toContain('"version": 5');
     expect(localStorage.getItem('space-travelor.game-state.v1')).toBeNull();
   });
 });

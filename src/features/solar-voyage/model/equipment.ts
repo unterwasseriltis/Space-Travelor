@@ -31,7 +31,7 @@ const EQUIPMENT_SLOT_CONFIG_BY_ELEMENT = {
     activationCost: ELEMENT_SLOT_ACTIVATION_COST,
     effectKind: 'fuel',
     effectValue: HYDROGEN_FUEL_GAIN,
-    placeholderLabel: 'Fuel refill',
+    placeholderLabel: 'Treibstoffnachfuellung',
     placeholderValue: HYDROGEN_FUEL_GAIN,
     unlockThreshold: ELEMENT_SLOT_UNLOCK_THRESHOLD,
   },
@@ -39,7 +39,7 @@ const EQUIPMENT_SLOT_CONFIG_BY_ELEMENT = {
     activationCost: ELEMENT_SLOT_ACTIVATION_COST,
     effectKind: 'placeholder',
     effectValue: 2,
-    placeholderLabel: 'Reactor stability',
+    placeholderLabel: 'Reaktorstabilitaet',
     placeholderValue: 2,
     unlockThreshold: ELEMENT_SLOT_UNLOCK_THRESHOLD,
   },
@@ -47,7 +47,7 @@ const EQUIPMENT_SLOT_CONFIG_BY_ELEMENT = {
     activationCost: ELEMENT_SLOT_ACTIVATION_COST,
     effectKind: 'placeholder',
     effectValue: 3,
-    placeholderLabel: 'Battery throughput',
+    placeholderLabel: 'Batteriedurchsatz',
     placeholderValue: 3,
     unlockThreshold: ELEMENT_SLOT_UNLOCK_THRESHOLD,
   },
@@ -55,7 +55,7 @@ const EQUIPMENT_SLOT_CONFIG_BY_ELEMENT = {
     activationCost: ELEMENT_SLOT_ACTIVATION_COST,
     effectKind: 'placeholder',
     effectValue: 4,
-    placeholderLabel: 'Sensor range',
+    placeholderLabel: 'Sensorreichweite',
     placeholderValue: 4,
     unlockThreshold: ELEMENT_SLOT_UNLOCK_THRESHOLD,
   },
@@ -63,7 +63,7 @@ const EQUIPMENT_SLOT_CONFIG_BY_ELEMENT = {
     activationCost: ELEMENT_SLOT_ACTIVATION_COST,
     effectKind: 'placeholder',
     effectValue: 5,
-    placeholderLabel: 'Shield tuning',
+    placeholderLabel: 'Schildabstimmung',
     placeholderValue: 5,
     unlockThreshold: ELEMENT_SLOT_UNLOCK_THRESHOLD,
   },
@@ -71,7 +71,7 @@ const EQUIPMENT_SLOT_CONFIG_BY_ELEMENT = {
     activationCost: ELEMENT_SLOT_ACTIVATION_COST,
     effectKind: 'placeholder',
     effectValue: 6,
-    placeholderLabel: 'Hull weave',
+    placeholderLabel: 'Rumpfgewebe',
     placeholderValue: 6,
     unlockThreshold: ELEMENT_SLOT_UNLOCK_THRESHOLD,
   },
@@ -79,7 +79,7 @@ const EQUIPMENT_SLOT_CONFIG_BY_ELEMENT = {
     activationCost: ELEMENT_SLOT_ACTIVATION_COST,
     effectKind: 'placeholder',
     effectValue: 7,
-    placeholderLabel: 'Life support',
+    placeholderLabel: 'Lebenserhaltung',
     placeholderValue: 7,
     unlockThreshold: ELEMENT_SLOT_UNLOCK_THRESHOLD,
   },
@@ -87,7 +87,7 @@ const EQUIPMENT_SLOT_CONFIG_BY_ELEMENT = {
     activationCost: ELEMENT_SLOT_ACTIVATION_COST,
     effectKind: 'placeholder',
     effectValue: 8,
-    placeholderLabel: 'Combustion mix',
+    placeholderLabel: 'Verbrennungsgemisch',
     placeholderValue: 8,
     unlockThreshold: ELEMENT_SLOT_UNLOCK_THRESHOLD,
   },
@@ -95,7 +95,7 @@ const EQUIPMENT_SLOT_CONFIG_BY_ELEMENT = {
     activationCost: ELEMENT_SLOT_ACTIVATION_COST,
     effectKind: 'placeholder',
     effectValue: 9,
-    placeholderLabel: 'Propellant catalyst',
+    placeholderLabel: 'Treibstoffkatalysator',
     placeholderValue: 9,
     unlockThreshold: ELEMENT_SLOT_UNLOCK_THRESHOLD,
   },
@@ -103,7 +103,7 @@ const EQUIPMENT_SLOT_CONFIG_BY_ELEMENT = {
     activationCost: ELEMENT_SLOT_ACTIVATION_COST,
     effectKind: 'placeholder',
     effectValue: 10,
-    placeholderLabel: 'Nav beacon',
+    placeholderLabel: 'Navigationsbake',
     placeholderValue: 10,
     unlockThreshold: ELEMENT_SLOT_UNLOCK_THRESHOLD,
   },
@@ -111,7 +111,7 @@ const EQUIPMENT_SLOT_CONFIG_BY_ELEMENT = {
     activationCost: ELEMENT_SLOT_ACTIVATION_COST,
     effectKind: 'placeholder',
     effectValue: 11,
-    placeholderLabel: 'Coolant pulse',
+    placeholderLabel: 'Kuehlimpuls',
     placeholderValue: 11,
     unlockThreshold: ELEMENT_SLOT_UNLOCK_THRESHOLD,
   },
@@ -119,7 +119,7 @@ const EQUIPMENT_SLOT_CONFIG_BY_ELEMENT = {
     activationCost: ELEMENT_SLOT_ACTIVATION_COST,
     effectKind: 'placeholder',
     effectValue: 12,
-    placeholderLabel: 'Frame reinforcement',
+    placeholderLabel: 'Rahmenverstaerkung',
     placeholderValue: 12,
     unlockThreshold: ELEMENT_SLOT_UNLOCK_THRESHOLD,
   },
@@ -127,7 +127,7 @@ const EQUIPMENT_SLOT_CONFIG_BY_ELEMENT = {
     activationCost: ELEMENT_SLOT_ACTIVATION_COST,
     effectKind: 'placeholder',
     effectValue: 13,
-    placeholderLabel: 'Bulkhead polish',
+    placeholderLabel: 'Schottversiegelung',
     placeholderValue: 13,
     unlockThreshold: ELEMENT_SLOT_UNLOCK_THRESHOLD,
   },
@@ -135,7 +135,7 @@ const EQUIPMENT_SLOT_CONFIG_BY_ELEMENT = {
     activationCost: ELEMENT_SLOT_ACTIVATION_COST,
     effectKind: 'placeholder',
     effectValue: 14,
-    placeholderLabel: 'Circuit overclock',
+    placeholderLabel: 'Schaltkreis-Boost',
     placeholderValue: 14,
     unlockThreshold: ELEMENT_SLOT_UNLOCK_THRESHOLD,
   },
@@ -178,10 +178,10 @@ export function getEquipmentSlotConfig(element: ElementKey) {
 
 export function formatEquipmentEffect(config: EquipmentSlotConfig) {
   if (config.effectKind === 'fuel') {
-    return `+${formatFuelValue(config.effectValue)} fuel`;
+    return `+${formatFuelValue(config.effectValue)} Treibstoff`;
   }
 
-  return `${config.placeholderLabel} ${config.placeholderValue} (placeholder)`;
+  return `${config.placeholderLabel} ${config.placeholderValue} (Platzhalter)`;
 }
 
 export function calculateRequiredFuel(totalSeconds: number) {

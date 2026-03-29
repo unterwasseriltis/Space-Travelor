@@ -21,10 +21,15 @@ describe('MissionControl component', () => {
 
     render(<MissionControl backgroundImage="/background.jpg" />);
 
-    await user.click(screen.getByRole('button', { name: /new mission/i }));
+    await user.click(screen.getByRole('button', { name: /neue mission/i }));
 
-    expect(screen.getByText(/navigation/i)).toBeInTheDocument();
-    expect(screen.getByText(/current coordinates/i)).toBeInTheDocument();
+    expect(screen.getByText(/willkommen an bord/i)).toBeInTheDocument();
+    expect(screen.getByText(/platzhalter fuer ein grosses willkommensbild/i)).toBeInTheDocument();
+
+    await closeWelcomeDialog(user);
+    expect(screen.getByRole('heading', { name: /^navigation$/i })).toBeInTheDocument();
+    expect(screen.getByText(/aktuelle koordinaten/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /audio stummschalten/i })).toBeInTheDocument();
   });
 
   it('starts a trip and shows the transit countdown', async () => {
@@ -32,13 +37,14 @@ describe('MissionControl component', () => {
 
     render(<MissionControl backgroundImage="/background.jpg" />);
 
-    await user.click(screen.getByRole('button', { name: /new mission/i }));
-    await user.click(screen.getByRole('button', { name: /accelerate/i }));
+    await user.click(screen.getByRole('button', { name: /neue mission/i }));
+    await closeWelcomeDialog(user);
+    await user.click(screen.getByRole('button', { name: /starten/i }));
 
-    expect(screen.getByText(/transit countdown/i)).toBeInTheDocument();
+    expect(screen.getByText(/ankunft in/i)).toBeInTheDocument();
     expect(screen.getByText('1:00')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /pause/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /abort/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abbrechen/i })).toBeInTheDocument();
   });
 
   it('keeps the ship centered while minimap zoom changes', async () => {
@@ -46,11 +52,12 @@ describe('MissionControl component', () => {
 
     render(<MissionControl backgroundImage="/background.jpg" />);
 
-    await user.click(screen.getByRole('button', { name: /new mission/i }));
+    await user.click(screen.getByRole('button', { name: /neue mission/i }));
+    await closeWelcomeDialog(user);
 
     const shipMarker = screen.getByTestId('minimap-ship');
     const marsMarker = screen.getByTestId('minimap-body-Mars');
-    const zoomSlider = screen.getByRole('slider', { name: /minimap zoom/i });
+    const zoomSlider = screen.getByRole('slider', { name: /zoom der minikarte/i });
 
     expect(shipMarker).toHaveStyle({ left: '50%', top: '50%' });
 
@@ -74,9 +81,9 @@ describe('MissionControl component', () => {
 
     render(<MissionControl backgroundImage="/background.jpg" />);
 
-    await user.click(screen.getByRole('button', { name: /load mission/i }));
+    await user.click(screen.getByRole('button', { name: /mission laden/i }));
 
-    expect(screen.getByText(/navigation/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^navigation$/i })).toBeInTheDocument();
     expect(screen.getByText('00:00:42')).toBeInTheDocument();
   });
 
@@ -99,10 +106,10 @@ describe('MissionControl component', () => {
 
     render(<MissionControl backgroundImage="/background.jpg" />);
 
-    await user.click(screen.getByRole('button', { name: /load mission/i }));
-    await user.click(screen.getByRole('button', { name: /wasserstoff slot aktivieren/i }));
+    await user.click(screen.getByRole('button', { name: /mission laden/i }));
+    await user.click(screen.getByRole('button', { name: /wasserstoff-slot aktivieren/i }));
 
-    expect(screen.getAllByRole('button', { name: /slot aktivieren/i })).toHaveLength(14);
+    expect(screen.getAllByRole('button', { name: /-slot aktivieren/i })).toHaveLength(14);
     expect(screen.getByText('95 / 100')).toBeInTheDocument();
     expect(
       within(screen.getByTestId('equipment-slot-hydrogen')).getByText(/bestand: 0/i),
@@ -127,14 +134,14 @@ describe('MissionControl component', () => {
 
     render(<MissionControl backgroundImage="/background.jpg" />);
 
-    await user.click(screen.getByRole('button', { name: /load mission/i }));
-    await user.click(screen.getByRole('button', { name: /open crafting/i }));
-    await user.click(screen.getByRole('button', { name: /craft mining laser/i }));
+    await user.click(screen.getByRole('button', { name: /mission laden/i }));
+    await user.click(screen.getByRole('button', { name: /fertigung oeffnen/i }));
+    await user.click(screen.getByRole('button', { name: /mining-laser herstellen/i }));
 
     expect(
-      screen.getByRole('button', { name: /mining laser inventory item/i }),
+      screen.getByRole('button', { name: /mining-laser im inventar einsetzen/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/slot 1 stock increased to 1/i)).toBeInTheDocument();
+    expect(screen.getByText(/bestand in slot 1 liegt jetzt bei 1/i)).toBeInTheDocument();
   });
 
   it('uses a crafted shield booster from inventory', async () => {
@@ -158,11 +165,11 @@ describe('MissionControl component', () => {
 
     render(<MissionControl backgroundImage="/background.jpg" />);
 
-    await user.click(screen.getByRole('button', { name: /load mission/i }));
-    await user.click(screen.getByRole('button', { name: /shield booster inventory item/i }));
+    await user.click(screen.getByRole('button', { name: /mission laden/i }));
+    await user.click(screen.getByRole('button', { name: /schild-booster im inventar einsetzen/i }));
 
     expect(screen.getByText('90%')).toBeInTheDocument();
-    expect(screen.getByText(/shield booster used/i)).toBeInTheDocument();
+    expect(screen.getByText(/schild-booster eingesetzt/i)).toBeInTheDocument();
   });
 
   it('switches the resource panel to special resources', async () => {
@@ -170,8 +177,9 @@ describe('MissionControl component', () => {
 
     render(<MissionControl backgroundImage="/background.jpg" />);
 
-    await user.click(screen.getByRole('button', { name: /new mission/i }));
-    await user.click(screen.getByRole('button', { name: /show special resources/i }));
+    await user.click(screen.getByRole('button', { name: /neue mission/i }));
+    await closeWelcomeDialog(user);
+    await user.click(screen.getByRole('button', { name: /spezialressourcen anzeigen/i }));
 
     expect(screen.getByText(/roherze/i)).toBeInTheDocument();
     expect(screen.getByText(/diamanten/i)).toBeInTheDocument();
@@ -196,9 +204,10 @@ describe('MissionControl component', () => {
 
     render(<MissionControl backgroundImage="/background.jpg" />);
 
-    await user.click(screen.getByRole('button', { name: /new mission/i }));
-    await user.click(screen.getByRole('button', { name: /open settings/i }));
-    await user.click(screen.getByRole('button', { name: /^export$/i }));
+    await user.click(screen.getByRole('button', { name: /neue mission/i }));
+    await closeWelcomeDialog(user);
+    await user.click(screen.getByRole('button', { name: /einstellungen oeffnen/i }));
+    await user.click(screen.getByRole('button', { name: /^exportieren$/i }));
 
     await waitFor(() => {
       expect(clipboardWriteText).toHaveBeenCalledWith(
@@ -210,7 +219,7 @@ describe('MissionControl component', () => {
     expect(revokeObjectURL).toHaveBeenCalledTimes(1);
     expect(anchorClick).toHaveBeenCalledTimes(1);
     expect(
-      screen.getByText(/current snapshot copied to the clipboard and downloaded as json/i),
+      screen.getByText(/zwischenablage kopiert und als json heruntergeladen/i),
     ).toBeInTheDocument();
   });
 
@@ -227,18 +236,21 @@ describe('MissionControl component', () => {
 
     render(<MissionControl backgroundImage="/background.jpg" />);
 
-    await user.click(screen.getByRole('button', { name: /open settings/i }));
-    await user.upload(screen.getByLabelText(/import save file/i), saveFile);
+    await user.click(screen.getByRole('button', { name: /einstellungen oeffnen/i }));
+    await user.upload(screen.getByLabelText(/speicherdatei importieren/i), saveFile);
 
-    expect(screen.getByText(/navigation/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^navigation$/i })).toBeInTheDocument();
     expect(screen.getByText('00:00:07')).toBeInTheDocument();
-    expect(screen.getByText(/imported "mission-save\.json" successfully\./i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/"mission-save\.json" wurde erfolgreich importiert\./i),
+    ).toBeInTheDocument();
   });
 
   it('autosaves the active mission every 5 seconds', async () => {
     render(<MissionControl backgroundImage="/background.jpg" />);
 
-    fireEvent.click(screen.getByRole('button', { name: /new mission/i }));
+    fireEvent.click(screen.getByRole('button', { name: /neue mission/i }));
+    fireEvent.click(screen.getByRole('button', { name: /los geht/i }));
 
     expect(screen.getByText('00:00:00')).toBeInTheDocument();
 
@@ -265,18 +277,41 @@ describe('MissionControl component', () => {
 
     render(<MissionControl backgroundImage="/background.jpg" />);
 
-    fireEvent.click(screen.getByRole('button', { name: /new mission/i }));
-    fireEvent.click(screen.getByRole('button', { name: /accelerate/i }));
+    fireEvent.click(screen.getByRole('button', { name: /neue mission/i }));
+    fireEvent.click(screen.getByRole('button', { name: /los geht/i }));
+    fireEvent.click(screen.getByRole('button', { name: /starten/i }));
 
     act(() => {
       vi.advanceTimersByTime(60000);
     });
 
     expect(screen.getByText(/willkommen auf dem mond\./i)).toBeInTheDocument();
+    expect(screen.getByText(/mond kolonie/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /die lokale flugkontrolle hat die ankunft der space travelor bereits bestaetigt/i,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByAltText(/kolonie-kontakt platzhalter fuer mond/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/ankunftsansicht platzhalter fuer mond/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /^ok\.$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /schliessen/i }));
 
     expect(screen.queryByText(/willkommen auf dem mond\./i)).not.toBeInTheDocument();
+  });
+
+  it('toggles the speaker button state', async () => {
+    const user = userEvent.setup();
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    const muteButton = screen.getByRole('button', { name: /audio stummschalten/i });
+
+    await user.click(muteButton);
+    expect(screen.getByRole('button', { name: /audio aktivieren/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /audio aktivieren/i }));
+    expect(screen.getByRole('button', { name: /audio stummschalten/i })).toBeInTheDocument();
   });
 
   it('can abort a trip and keeps the ship at its current coordinates', () => {
@@ -284,8 +319,9 @@ describe('MissionControl component', () => {
 
     render(<MissionControl backgroundImage="/background.jpg" />);
 
-    fireEvent.click(screen.getByRole('button', { name: /new mission/i }));
-    fireEvent.click(screen.getByRole('button', { name: /accelerate/i }));
+    fireEvent.click(screen.getByRole('button', { name: /neue mission/i }));
+    fireEvent.click(screen.getByRole('button', { name: /los geht/i }));
+    fireEvent.click(screen.getByRole('button', { name: /starten/i }));
 
     act(() => {
       vi.advanceTimersByTime(5000);
@@ -293,11 +329,15 @@ describe('MissionControl component', () => {
 
     const coordinatesBeforeAbort = screen.getByText(/x:/i).textContent;
 
-    fireEvent.click(screen.getByRole('button', { name: /abort/i }));
+    fireEvent.click(screen.getByRole('button', { name: /abbrechen/i }));
 
-    expect(screen.getByText(/deep space hold/i)).toBeInTheDocument();
-    expect(screen.queryByText(/transit countdown/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/travel aborted/i)).toBeInTheDocument();
+    expect(screen.getByText(/tiefer weltraum/i)).toBeInTheDocument();
+    expect(screen.queryByText(/ankunft in/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/flug abgebrochen/i)).toBeInTheDocument();
     expect(screen.getByText(coordinatesBeforeAbort ?? '')).toBeInTheDocument();
   });
 });
+
+async function closeWelcomeDialog(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: /los geht/i }));
+}

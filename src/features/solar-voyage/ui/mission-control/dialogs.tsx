@@ -1,5 +1,13 @@
 import type { ReactNode } from 'react';
-import { DownloadIcon, Hammer, SettingsIcon, UploadIcon, XIcon } from 'lucide-react';
+import {
+  DownloadIcon,
+  Hammer,
+  SettingsIcon,
+  UploadIcon,
+  Volume2Icon,
+  VolumeXIcon,
+  XIcon,
+} from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,16 +18,38 @@ import {
 } from '@/features/solar-voyage/model/crafting';
 import { ELEMENTS } from '@/features/solar-voyage/model/types';
 import type {
+  ArrivalDialogState,
   ElementKey,
   InventoryItemKey,
   InventorySlotState,
 } from '@/features/solar-voyage/model/types';
+import { getArrivalVisuals } from '@/features/solar-voyage/ui/mission-control/arrival-visuals';
+
+export function AudioToggleButton({ isMuted, onClick }: { isMuted: boolean; onClick: () => void }) {
+  return (
+    <Button
+      aria-label={isMuted ? 'Audio aktivieren' : 'Audio stummschalten'}
+      aria-pressed={isMuted}
+      className="size-12 rounded-full border border-white/10 bg-slate-950/75 shadow-[0_0_25px_rgba(3,6,17,0.4)] backdrop-blur-md hover:bg-slate-900/90"
+      onClick={onClick}
+      size="icon-lg"
+      type="button"
+      variant="outline"
+    >
+      {isMuted ? (
+        <VolumeXIcon className="text-primary size-5" />
+      ) : (
+        <Volume2Icon className="text-primary size-5" />
+      )}
+    </Button>
+  );
+}
 
 export function SettingsButton({ onClick }: { onClick: () => void }) {
   return (
     <Button
-      aria-label="Open settings"
-      className="fixed top-6 right-6 z-40 size-12 rounded-full border border-white/10 bg-slate-950/75 shadow-[0_0_25px_rgba(3,6,17,0.4)] backdrop-blur-md hover:bg-slate-900/90"
+      aria-label="Einstellungen oeffnen"
+      className="size-12 rounded-full border border-white/10 bg-slate-950/75 shadow-[0_0_25px_rgba(3,6,17,0.4)] backdrop-blur-md hover:bg-slate-900/90"
       onClick={onClick}
       size="icon-lg"
       type="button"
@@ -33,7 +63,7 @@ export function SettingsButton({ onClick }: { onClick: () => void }) {
 export function CraftingButton({ onClick }: { onClick: () => void }) {
   return (
     <Button
-      aria-label="Open crafting"
+      aria-label="Fertigung oeffnen"
       className="size-10 rounded-full border border-white/10 bg-slate-950/75 shadow-[0_0_25px_rgba(3,6,17,0.4)] backdrop-blur-md hover:bg-slate-900/90"
       onClick={onClick}
       size="icon-sm"
@@ -75,13 +105,13 @@ export function SettingsDialog({
       <div className="glass-panel hud-outline w-full max-w-sm rounded-[2rem] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <p className="text-primary text-xs font-bold tracking-[0.32em] uppercase">Data Link</p>
+            <p className="text-primary text-xs font-bold tracking-[0.32em] uppercase">Datenlink</p>
             <h2 className="mt-2 font-[family-name:var(--font-display)] text-2xl tracking-[0.16em] text-white uppercase">
-              Save Controls
+              Speicherstand
             </h2>
           </div>
           <Button
-            aria-label="Close settings"
+            aria-label="Einstellungen schliessen"
             onClick={onClose}
             size="icon-sm"
             type="button"
@@ -101,7 +131,7 @@ export function SettingsDialog({
             type="button"
           >
             <DownloadIcon />
-            Export
+            Exportieren
           </Button>
           <Button
             className="h-12 w-full justify-center gap-2 tracking-[0.18em] uppercase"
@@ -110,7 +140,7 @@ export function SettingsDialog({
             variant="secondary"
           >
             <UploadIcon />
-            Import
+            Importieren
           </Button>
         </div>
 
@@ -122,9 +152,79 @@ export function SettingsDialog({
 
         {!canExport ? (
           <p className="mt-4 text-xs tracking-[0.12em] text-slate-500 uppercase">
-            Export unlocks after a mission has been loaded.
+            Der Export wird verfuegbar, sobald eine Mission geladen wurde.
           </p>
         ) : null}
+      </div>
+    </div>
+  );
+}
+
+export function WelcomeDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    <div
+      aria-modal="true"
+      className="fixed inset-0 z-30 flex items-center justify-center bg-black/55 px-4 py-10 backdrop-blur-sm"
+      role="dialog"
+    >
+      <div className="glass-panel hud-outline flex w-full max-w-4xl flex-col gap-5 rounded-[2rem] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+        <div className="flex flex-col gap-2">
+          <p className="text-primary text-xs font-bold tracking-[0.32em] uppercase">
+            Willkommen an Bord
+          </p>
+          <h2 className="font-[family-name:var(--font-display)] text-3xl tracking-[0.12em] text-white uppercase">
+            Space Travelor
+          </h2>
+        </div>
+
+        <div className="border-border bg-muted/25 flex aspect-[16/7] items-center justify-center rounded-[1.75rem] border border-dashed">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <div className="border-primary/40 bg-primary/10 text-primary flex size-16 items-center justify-center rounded-full border text-2xl">
+              Bild
+            </div>
+            <p className="text-sm tracking-[0.18em] text-slate-300 uppercase">
+              Platzhalter fuer ein grosses Willkommensbild
+            </p>
+          </div>
+        </div>
+
+        <div className="border-border bg-background/35 max-h-72 overflow-y-auto rounded-[1.5rem] border p-5 text-sm leading-7 text-slate-200">
+          <p>
+            Willkommen auf der Bruecke der Space Travelor. Vor dir liegt ein weiter, offener Kurs
+            durch das Sonnensystem, und jede Route fordert andere Entscheidungen bei Treibstoff,
+            Zeit, Ressourcen und Ausruestung. Nutze die Navigation, um Ziele auszuwaehlen, beobachte
+            den Zustand des Schiffes und behalte immer im Blick, wie sich deine Reserven waehrend
+            eines Flugs veraendern.
+          </p>
+          <p className="mt-4">
+            Auf Reisen sammelst du Elemente, mit denen sich Ausruestungsslots freischalten und
+            Inventargegenstaende herstellen lassen. Einige Systeme liefern direkte Vorteile wie
+            zusaetzlichen Treibstoff, andere sind bewusst als Platzhalter vorbereitet und koennen
+            spaeter weiter ausgebaut werden. Scanner helfen dir dabei, neue Abbauorte zu finden,
+            Mining-Laser holen Rohstoffe aus entdeckten Feldern, und Schild-Booster halten dein
+            Schiff einsatzbereit, wenn du unterwegs Reserven brauchst.
+          </p>
+          <p className="mt-4">
+            Dieser Bildschirm ist absichtlich groesser gehalten, damit spaeter ein grosses Bild,
+            laengere Einfuehrungstexte oder Missionshinweise Platz finden. Die Textbox bleibt
+            scrollbar, sobald mehr Inhalt hinzukommt. Wenn du bereit bist, schliesse dieses Fenster
+            und beginne deine erste Route.
+          </p>
+        </div>
+
+        <div className="flex justify-end">
+          <Button
+            className="h-11 min-w-36 tracking-[0.18em] uppercase"
+            onClick={onClose}
+            type="button"
+          >
+            Los Geht&apos;s!
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -156,13 +256,13 @@ export function CraftingDialog({
       <div className="glass-panel hud-outline w-full max-w-md rounded-[2rem] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <p className="text-primary text-xs font-bold tracking-[0.32em] uppercase">Workbench</p>
+            <p className="text-primary text-xs font-bold tracking-[0.32em] uppercase">Werkbank</p>
             <h2 className="mt-2 font-[family-name:var(--font-display)] text-2xl tracking-[0.16em] text-white uppercase">
-              Crafting
+              Fertigung
             </h2>
           </div>
           <Button
-            aria-label="Close crafting"
+            aria-label="Fertigung schliessen"
             onClick={onClose}
             size="icon-sm"
             type="button"
@@ -224,7 +324,7 @@ export function CraftingDialog({
                   type="button"
                   variant="secondary"
                 >
-                  Craft {recipe.label} +1
+                  {recipe.label} herstellen +1
                 </Button>
               </div>
             );
@@ -236,17 +336,19 @@ export function CraftingDialog({
 }
 
 export function ArrivalDialog({
+  arrivalDialog,
   isOpen,
-  message,
   onConfirm,
 }: {
+  arrivalDialog: ArrivalDialogState;
   isOpen: boolean;
-  message: string | null;
   onConfirm: () => void;
 }) {
-  if (!isOpen || !message) {
+  if (!isOpen || !arrivalDialog) {
     return null;
   }
+
+  const visuals = getArrivalVisuals(arrivalDialog);
 
   return (
     <div
@@ -254,19 +356,76 @@ export function ArrivalDialog({
       className="fixed inset-0 z-30 flex items-center justify-center bg-black/45 px-4 py-20 backdrop-blur-sm"
       role="dialog"
     >
-      <div className="glass-panel hud-outline w-full max-w-md rounded-[2rem] p-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
-        <p className="text-primary text-xs font-bold tracking-[0.32em] uppercase">Arrival</p>
-        <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl tracking-[0.12em] text-white uppercase">
-          Ziel erreicht
-        </h2>
-        <p className="mt-4 text-base leading-7 text-slate-200">{message}</p>
-        <Button
-          className="mt-6 h-11 min-w-28 tracking-[0.18em] uppercase"
-          onClick={onConfirm}
-          type="button"
-        >
-          Ok.
-        </Button>
+      <div className="glass-panel hud-outline w-full max-w-5xl rounded-[2rem] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+        <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
+          <section className="border-border bg-muted/30 flex flex-col gap-4 rounded-[1.75rem] border p-4">
+            <div className="overflow-hidden rounded-[1.4rem] border border-white/10 bg-slate-950/60">
+              <img
+                alt={visuals.portraitAlt}
+                className="aspect-[4/5] h-full w-full object-cover"
+                src={visuals.portraitSrc}
+              />
+            </div>
+            <div className="space-y-3">
+              <Badge className="bg-primary/15 text-primary w-fit">{visuals.portraitLabel}</Badge>
+              <p className="text-sm leading-6 text-slate-200">{visuals.greeting}</p>
+              <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
+                Platzhalter-Portraet fuer spaetere Kontaktgrafiken.
+              </p>
+            </div>
+          </section>
+
+          <section className="border-border bg-muted/25 flex min-w-0 flex-col gap-5 rounded-[1.75rem] border p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-primary text-xs font-bold tracking-[0.32em] uppercase">
+                  Ankunft
+                </p>
+                <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl tracking-[0.12em] text-white uppercase">
+                  {visuals.title}
+                </h2>
+              </div>
+              <Badge className="bg-accent/15 text-accent h-fit w-fit">{visuals.statusLabel}</Badge>
+            </div>
+
+            <div className="overflow-hidden rounded-[1.4rem] border border-white/10 bg-slate-950/60">
+              <img
+                alt={visuals.sceneAlt}
+                className="aspect-[16/9] h-full w-full object-cover"
+                src={visuals.sceneSrc}
+              />
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_220px]">
+              <div className="space-y-3">
+                <p className="text-base leading-7 text-slate-100">{arrivalDialog.message}</p>
+                <p className="text-sm leading-6 text-slate-300">
+                  Die zivilen Kanaele sind aktiv, und die lokale Flugkontrolle hat die Ankunft der
+                  Space Travelor bereits bestaetigt.
+                </p>
+              </div>
+              <div className="border-border bg-background/40 rounded-[1.25rem] border p-4">
+                <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase">
+                  {visuals.sceneLabel}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  Platzhalteransicht fuer die Oberflaeche, die Orbitalstation oder den Dockkorridor
+                  dieses Zielorts.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                className="h-11 min-w-28 tracking-[0.18em] uppercase"
+                onClick={onConfirm}
+                type="button"
+              >
+                Schliessen
+              </Button>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );

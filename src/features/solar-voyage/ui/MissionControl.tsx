@@ -14,6 +14,7 @@ import type { LocationOption, MapLocation } from '@/features/solar-voyage/model/
 import { formatFuelValue } from '@/features/solar-voyage/model/equipment';
 import type {
   ElementKey,
+  ArrivalDialogState,
   EquipmentSlotState,
   InventoryItemKey,
   InventorySlotState,
@@ -35,10 +36,13 @@ import {
 } from '@/features/solar-voyage/ui/mission-control/panels';
 import {
   ArrivalDialog,
+  AudioToggleButton,
   CraftingDialog,
   SettingsButton,
   SettingsDialog,
+  WelcomeDialog,
 } from '@/features/solar-voyage/ui/mission-control/dialogs';
+import { useTransitHum } from '@/features/solar-voyage/ui/mission-control/use-transit-hum';
 import {
   useMissionViewportLayout,
   type MissionViewportLayout,
@@ -80,9 +84,16 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
   const clearNotificationEvent = useEffectEvent(clearNotification);
   const missionViewportLayout = useMissionViewportLayout();
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [isCraftingOpen, setIsCraftingOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
+
+  useTransitHum({
+    isMuted: isAudioMuted,
+    isPlaying: state.phase === 'mission' && state.travel?.status === 'active',
+  });
 
   useEffect(() => {
     if (!state.notification) {
@@ -134,13 +145,15 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
 
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(snapshot);
-        setSettingsMessage('Current snapshot copied to the clipboard and downloaded as JSON.');
+        setSettingsMessage(
+          'Der aktuelle Spielstand wurde in die Zwischenablage kopiert und als JSON heruntergeladen.',
+        );
         return;
       }
 
-      setSettingsMessage('Current snapshot downloaded as JSON.');
+      setSettingsMessage('Der aktuelle Spielstand wurde als JSON heruntergeladen.');
     } catch {
-      setSettingsMessage('Export failed. Please try again.');
+      setSettingsMessage('Der Export ist fehlgeschlagen. Bitte versuche es erneut.');
     }
   };
 
@@ -159,14 +172,32 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       const snapshot = await importFile.text();
 
       importSnapshot(snapshot);
-      setSettingsMessage(`Imported "${importFile.name}" successfully.`);
+      setSettingsMessage(`"${importFile.name}" wurde erfolgreich importiert.`);
     } catch (error) {
       setSettingsMessage(
-        error instanceof Error ? error.message : 'Import failed. Please try another save file.',
+        error instanceof Error
+          ? error.message
+          : 'Der Import ist fehlgeschlagen. Bitte versuche eine andere Speicherdatei.',
       );
     } finally {
       event.target.value = '';
     }
+  };
+
+  const handleStartMission = () => {
+    startMission();
+    setIsSettingsOpen(false);
+    setIsWelcomeOpen(true);
+  };
+
+  const handleLoadMission = () => {
+    const didLoadMission = loadSavedMission();
+
+    if (didLoadMission) {
+      setIsSettingsOpen(false);
+    }
+
+    return didLoadMission;
   };
 
   return state.phase === 'menu' ? (
@@ -178,16 +209,18 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       onExport={handleExport}
       onImport={handleImportButtonClick}
       onImportChange={handleImportChange}
-      onLoadMission={loadSavedMission}
-      onStartMission={startMission}
+      onLoadMission={handleLoadMission}
+      onStartMission={handleStartMission}
       onCloseSettings={() => setIsSettingsOpen(false)}
       onToggleSettings={() => setIsSettingsOpen((currentOpen) => !currentOpen)}
+      onToggleAudio={() => setIsAudioMuted((currentMuted) => !currentMuted)}
+      isAudioMuted={isAudioMuted}
       settingsMessage={settingsMessage}
     />
   ) : (
     <MissionWorkspace
       activateEquipmentSlot={activateEquipmentSlot}
-      arrivalDialogMessage={state.arrivalDialog?.message ?? null}
+      arrivalDialog={state.arrivalDialog}
       availableDestinations={availableDestinations}
       backgroundImage={backgroundImage}
       coordinatesLabel={coordinatesLabel}
@@ -207,7 +240,9 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       mapLocations={mapLocations}
       notification={state.notification}
       isTraveling={isTraveling}
+      isWelcomeOpen={isWelcomeOpen}
       onClearArrivalDialog={clearArrivalDialog}
+      onCloseWelcome={() => setIsWelcomeOpen(false)}
       onExport={handleExport}
       onImport={handleImportButtonClick}
       onImportChange={handleImportChange}
@@ -217,6 +252,7 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       onSelectDestination={selectDestination}
       onStartTravel={startTravel}
       onAbortTravel={abortTravel}
+      onToggleAudio={() => setIsAudioMuted((currentMuted) => !currentMuted)}
       onToggleCrafting={() => setIsCraftingOpen((currentOpen) => !currentOpen)}
       onToggleSettings={() => setIsSettingsOpen((currentOpen) => !currentOpen)}
       resources={state.resources}
@@ -230,6 +266,7 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       travelCountdownLabel={travelCountdownLabel}
       travelProgress={travelProgress}
       travelStatus={travelStatus}
+      isAudioMuted={isAudioMuted}
     />
   );
 }
@@ -238,12 +275,14 @@ function LaunchMenu({
   backgroundImage,
   hasSavedMission,
   importInputRef,
+  isAudioMuted,
   isSettingsOpen,
   onExport,
   onImport,
   onImportChange,
   onLoadMission,
   onStartMission,
+  onToggleAudio,
   onToggleSettings,
   settingsMessage,
   onCloseSettings,
@@ -251,12 +290,14 @@ function LaunchMenu({
   backgroundImage: string;
   hasSavedMission: boolean;
   importInputRef: RefObject<HTMLInputElement | null>;
+  isAudioMuted: boolean;
   isSettingsOpen: boolean;
   onExport: () => Promise<void>;
   onImport: () => void;
   onImportChange: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
   onLoadMission: () => boolean;
   onStartMission: () => void;
+  onToggleAudio: () => void;
   onToggleSettings: () => void;
   settingsMessage: string | null;
   onCloseSettings: () => void;
@@ -270,7 +311,10 @@ function LaunchMenu({
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,6,17,0.92)_0%,rgba(3,6,17,0.6)_42%,rgba(3,6,17,0.1)_100%)]" />
 
       <div className="starfield fixed inset-0 opacity-40" />
-      <SettingsButton onClick={onToggleSettings} />
+      <div className="fixed top-6 right-6 z-40 flex items-center gap-3">
+        <AudioToggleButton isMuted={isAudioMuted} onClick={onToggleAudio} />
+        <SettingsButton onClick={onToggleSettings} />
+      </div>
       <SettingsDialog
         isOpen={isSettingsOpen}
         canExport={false}
@@ -281,13 +325,13 @@ function LaunchMenu({
         }}
         onImport={onImport}
       >
-        Import a save file from disk. Autosaves are written to local storage every 5 seconds during
-        a mission.
+        Importiere eine Speicherdatei von der Festplatte. Automatische Speicherungen werden waehrend
+        einer Mission alle 5 Sekunden im lokalen Speicher abgelegt.
       </SettingsDialog>
       <input
         ref={importInputRef}
         accept=".json,application/json,text/plain"
-        aria-label="Import save file"
+        aria-label="Speicherdatei importieren"
         className="sr-only"
         onChange={(event) => {
           void onImportChange(event);
@@ -299,15 +343,15 @@ function LaunchMenu({
         <div className="grid w-full items-center gap-10 xl:grid-cols-[minmax(0,740px)_1fr]">
           <section className="animate-rise flex flex-col gap-8">
             <div className="flex flex-col gap-4">
-              <Badge className="bg-primary/15 text-primary w-fit">Mission Control</Badge>
-              <p className="text-primary/80 text-sm tracking-[0.5em] uppercase">Launch Interface</p>
+              <Badge className="bg-primary/15 text-primary w-fit">Missionszentrale</Badge>
+              <p className="text-primary/80 text-sm tracking-[0.5em] uppercase">Startoberflaeche</p>
               <h1 className="font-[family-name:var(--font-display)] text-5xl leading-none tracking-[0.18em] text-white md:text-8xl">
-                Solar Voyage
+                Space Travelor
               </h1>
               <p className="max-w-2xl text-xl leading-9 text-slate-300">
-                Step into the restored cockpit and chart the next burn. The bridge is live again,
-                with the original artwork driving the whole experience. Navigation, telemetry, and
-                resource management are online and ready for the next system jump.
+                Nimm im wiederhergestellten Cockpit Platz und plane den naechsten Kurs. Bruecke,
+                Navigation, Telemetrie und Ressourcenverwaltung sind aktiv und bereit fuer den
+                naechsten Sprung durch das Sonnensystem.
               </p>
             </div>
 
@@ -316,7 +360,7 @@ function LaunchMenu({
                 className="h-14 text-lg font-bold tracking-[0.2em] uppercase"
                 onClick={onStartMission}
               >
-                New Mission
+                Neue Mission
               </Button>
               <Button
                 className="h-14 text-lg tracking-[0.2em] uppercase"
@@ -324,20 +368,20 @@ function LaunchMenu({
                 disabled={!hasSavedMission}
                 onClick={onLoadMission}
               >
-                Load Mission
+                Mission Laden
               </Button>
               <Button
                 className="h-14 text-lg tracking-[0.2em] uppercase"
                 variant="outline"
                 disabled
               >
-                Exit Sequence
+                Beenden
               </Button>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-3">
-              <LaunchMetric label="Bridge" value="Online" />
-              <LaunchMetric label="Visual Feed" value="Restored" />
+              <LaunchMetric label="Bruecke" value="Aktiv" />
+              <LaunchMetric label="Bildfeed" value="Wiederhergestellt" />
               <LaunchMetric label="Stack" value="React TS" />
             </div>
           </section>
@@ -349,7 +393,7 @@ function LaunchMenu({
 
 function MissionWorkspace({
   activateEquipmentSlot,
-  arrivalDialogMessage,
+  arrivalDialog,
   availableDestinations,
   backgroundImage,
   coordinatesLabel,
@@ -362,12 +406,14 @@ function MissionWorkspace({
   inventorySlots,
   isCraftingOpen,
   isSettingsOpen,
+  isWelcomeOpen,
   missionTimerLabel,
   missionViewportLayout,
   mapLocations,
   notification,
   isTraveling,
   onClearArrivalDialog,
+  onCloseWelcome,
   onExport,
   onImport,
   onImportChange,
@@ -377,6 +423,7 @@ function MissionWorkspace({
   onSelectDestination,
   onStartTravel,
   onAbortTravel,
+  onToggleAudio,
   onToggleCrafting,
   onToggleSettings,
   resources,
@@ -390,9 +437,10 @@ function MissionWorkspace({
   travelCountdownLabel,
   travelProgress,
   travelStatus,
+  isAudioMuted,
 }: {
   activateEquipmentSlot: (element: ElementKey) => void;
-  arrivalDialogMessage: string | null;
+  arrivalDialog: ArrivalDialogState;
   availableDestinations: LocationOption[];
   backgroundImage: string;
   coordinatesLabel: string;
@@ -405,12 +453,14 @@ function MissionWorkspace({
   inventorySlots: InventorySlotState[];
   isCraftingOpen: boolean;
   isSettingsOpen: boolean;
+  isWelcomeOpen: boolean;
   missionTimerLabel: string;
   missionViewportLayout: MissionViewportLayout;
   mapLocations: MapLocation[];
   notification: string | null;
   isTraveling: boolean;
   onClearArrivalDialog: () => void;
+  onCloseWelcome: () => void;
   onExport: () => Promise<void>;
   onImport: () => void;
   onImportChange: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
@@ -420,6 +470,7 @@ function MissionWorkspace({
   onSelectDestination: (destination: LocationId | '') => void;
   onStartTravel: () => void;
   onAbortTravel: () => void;
+  onToggleAudio: () => void;
   onToggleCrafting: () => void;
   onToggleSettings: () => void;
   resources: ResourceState;
@@ -433,6 +484,7 @@ function MissionWorkspace({
   travelCountdownLabel: string | null;
   travelProgress: number;
   travelStatus: TravelStatus | null;
+  isAudioMuted: boolean;
 }) {
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-[#030611]">
@@ -442,7 +494,10 @@ function MissionWorkspace({
       />
       <div className="fixed inset-0 bg-[linear-gradient(180deg,rgba(3,6,17,0.3)_0%,rgba(3,6,17,0.7)_100%)]" />
       <div className="starfield fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(4,7,17,0.08),rgba(4,7,17,0.35))]" />
-      <SettingsButton onClick={onToggleSettings} />
+      <div className="fixed top-6 right-6 z-40 flex items-center gap-3">
+        <AudioToggleButton isMuted={isAudioMuted} onClick={onToggleAudio} />
+        <SettingsButton onClick={onToggleSettings} />
+      </div>
       <SettingsDialog
         isOpen={isSettingsOpen}
         canExport
@@ -453,12 +508,13 @@ function MissionWorkspace({
         }}
         onImport={onImport}
       >
-        Export a live snapshot of the current mission or import a JSON save file. Autosave keeps
-        local storage in sync every 5 seconds.
+        Exportiere einen Live-Spielstand der aktuellen Mission oder importiere eine JSON-Datei. Die
+        automatische Speicherung haelt den lokalen Speicher alle 5 Sekunden synchron.
       </SettingsDialog>
+      <WelcomeDialog isOpen={isWelcomeOpen} onClose={onCloseWelcome} />
       <ArrivalDialog
-        isOpen={Boolean(arrivalDialogMessage)}
-        message={arrivalDialogMessage}
+        arrivalDialog={arrivalDialog}
+        isOpen={Boolean(arrivalDialog)}
         onConfirm={onClearArrivalDialog}
       />
       <CraftingDialog
@@ -471,7 +527,7 @@ function MissionWorkspace({
       <input
         ref={importInputRef}
         accept=".json,application/json,text/plain"
-        aria-label="Import save file"
+        aria-label="Speicherdatei importieren"
         className="sr-only"
         onChange={(event) => {
           void onImportChange(event);
@@ -516,7 +572,7 @@ function MissionWorkspace({
                 <div className="flex items-center justify-end gap-2">
                   <Badge className="bg-accent/20 text-accent">Status</Badge>
                   <span className="text-lg font-medium text-slate-200">
-                    {travel ? 'In transit' : currentMapLocation ? 'Docked' : 'Holding'}
+                    {travel ? 'Im Transit' : currentMapLocation ? 'Angedockt' : 'Warteschleife'}
                   </span>
                 </div>
               </div>
@@ -589,7 +645,7 @@ function MissionWorkspace({
                 inventorySlots={inventorySlots}
                 onInventoryItemClick={onInventoryItemClick}
                 onOpenCrafting={onToggleCrafting}
-                title="Inventory"
+                title="Inventar"
               />
             </aside>
           </section>
@@ -600,5 +656,5 @@ function MissionWorkspace({
 }
 
 function createSaveFileName() {
-  return `solar-voyage-save-${new Date().toISOString().replaceAll(':', '-')}.json`;
+  return `space-travelor-save-${new Date().toISOString().replaceAll(':', '-')}.json`;
 }

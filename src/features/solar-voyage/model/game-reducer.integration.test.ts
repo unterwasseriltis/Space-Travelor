@@ -21,7 +21,7 @@ describe('gameReducer integration', () => {
     state = gameReducer(state, { type: 'travel/started' });
 
     expect(state.travel).toBeNull();
-    expect(state.notification).toBe('Choose a new destination before accelerating.');
+    expect(state.notification).toBe('Waehle vor dem Start ein neues Ziel.');
   });
 
   it('starts a mission and completes travel to the moon', () => {
@@ -40,7 +40,7 @@ describe('gameReducer integration', () => {
 
     expect(state.currentLocation).toBe('Mond');
     expect(state.resources.hydrogen).toBeGreaterThanOrEqual(0);
-    expect(state.notification).toContain('Arrival confirmed');
+    expect(state.notification).toContain('Ankunft bestaetigt');
     expect(state.selectedDestination).toBe('Erde');
   });
 
@@ -147,7 +147,7 @@ describe('gameReducer integration', () => {
     expect(
       nextState.equipmentSlots.find((slot) => slot.element === 'oxygen')?.activationCount,
     ).toBe(1);
-    expect(nextState.notification).toContain('placeholder applied');
+    expect(nextState.notification).toContain('als Platzhalter angewendet');
   });
 
   it('crafts the mining laser into the first inventory slot and consumes its resources', () => {
@@ -209,7 +209,7 @@ describe('gameReducer integration', () => {
     const nextState = gameReducer(missionState, { type: 'travel/started' });
 
     expect(nextState.travel).toBeNull();
-    expect(nextState.notification).toContain('Not enough fuel');
+    expect(nextState.notification).toContain('Nicht genug Treibstoff');
   });
 
   it('stops active travel when fuel runs out mid-flight', () => {
@@ -238,7 +238,7 @@ describe('gameReducer integration', () => {
 
     expect(nextState.travel?.remainingSeconds).toBe(3);
     expect(nextState.ship.fuel).toBe(0);
-    expect(nextState.notification).toContain('Fuel depleted');
+    expect(nextState.notification).toContain('Treibstoff aufgebraucht');
   });
 
   it('clears notifications without mutating the rest of the state', () => {
@@ -270,7 +270,7 @@ describe('gameReducer integration', () => {
       }),
     ).toEqual({
       ...importedState,
-      notification: 'Save imported successfully.',
+      notification: 'Speicherstand erfolgreich importiert.',
     });
   });
 
@@ -297,7 +297,7 @@ describe('gameReducer integration', () => {
 
     expect(nextState.ship.shields).toBe(80);
     expect(nextState.inventorySlots[1].count).toBe(0);
-    expect(nextState.notification).toContain('Shield Booster used');
+    expect(nextState.notification).toContain('Schild-Booster eingesetzt');
   });
 
   it('uses the scanner to discover one to three new mining destinations', () => {
@@ -321,7 +321,7 @@ describe('gameReducer integration', () => {
     expect(nextState.discoveredLocations.length).toBeGreaterThanOrEqual(1);
     expect(nextState.discoveredLocations.length).toBeLessThanOrEqual(3);
     expect(nextState.inventorySlots[2].count).toBe(0);
-    expect(nextState.notification).toContain('Scanner ping complete');
+    expect(nextState.notification).toContain('Scannerlauf abgeschlossen');
     randomSpy.mockRestore();
   });
 
@@ -371,7 +371,7 @@ describe('gameReducer integration', () => {
     expect(nextState.resources.magnesium).toBe(40);
     expect(nextState.specialResources.rawOre).toBeGreaterThan(0);
     expect(nextState.specialResources.diamonds).toBeGreaterThan(0);
-    expect(nextState.notification).toContain('depleted');
+    expect(nextState.notification).toContain('erschoepft');
     randomSpy.mockRestore();
   });
 
@@ -402,7 +402,7 @@ describe('gameReducer integration', () => {
       x: expectedX,
       y: expectedY,
     });
-    expect(state.currentLocationLabelOverride).toBe('Deep Space Hold');
-    expect(state.notification).toContain('Travel aborted');
+    expect(state.currentLocationLabelOverride).toBe('Tiefer Weltraum');
+    expect(state.notification).toContain('Flug abgebrochen');
   });
 });
