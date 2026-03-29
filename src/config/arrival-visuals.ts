@@ -29,20 +29,6 @@ import earthArrivalPortrait from '../../assets/arrival-portrait-erde.jpg';
 import venusArrivalPortrait from '../../assets/arrival-portrait-venus.jpg';
 import marsArrivalPortrait from '../../assets/arrival-portrait-mars.jpg';
 import phobosArrivalPortrait from '../../assets/arrival-portrait-phobos.jpg';
-import deimosArrivalPortrait from '../../assets/arrival-portrait-deimos.jpg';
-import merkurArrivalPortrait from '../../assets/arrival-portrait-merkur.jpg';
-import jupiterArrivalPortrait from '../../assets/arrival-portrait-jupiter.jpg';
-import amaltheaArrivalPortrait from '../../assets/arrival-portrait-amalthea.jpg';
-import ioArrivalPortrait from '../../assets/arrival-portrait-io.jpg';
-import europaArrivalPortrait from '../../assets/arrival-portrait-europa.jpg';
-import ganymedArrivalPortrait from '../../assets/arrival-portrait-ganymed.jpg';
-import kallistoArrivalPortrait from '../../assets/arrival-portrait-kallisto.jpg';
-import saturnArrivalPortrait from '../../assets/arrival-portrait-saturn.jpg';
-import tethysArrivalPortrait from '../../assets/arrival-portrait-tethys.jpg';
-import dioneArrivalPortrait from '../../assets/arrival-portrait-dione.jpg';
-import rheaArrivalPortrait from '../../assets/arrival-portrait-rhea.jpg';
-import titanArrivalPortrait from '../../assets/arrival-portrait-titan.jpg';
-import iapetusArrivalPortrait from '../../assets/arrival-portrait-iapetus.jpg';
 
 import { celestialBodies, type BodyName } from '@/features/solar-voyage/domain/solar-system';
 
@@ -58,144 +44,120 @@ export type ArrivalVisualConfig = {
   title: string;
 };
 
-const DEFAULT_PORTRAIT_LABEL = 'Colony Liaison';
-const DEFAULT_SCENE_LABEL = 'Arrival Vista';
-const DEFAULT_STATUS_CODE = 'COLONY ONLINE';
-const DEFAULT_STATUS_LABEL = 'Colonized destination';
-const DEFAULT_SCENE_SUBTITLE = 'COLONIZED WORLD';
+const DEFAULT_PORTRAIT_LABEL = 'Kolonie-Kontakt';
+const DEFAULT_SCENE_LABEL = 'Ankunftsansicht';
+const DEFAULT_STATUS_CODE = 'KOLONIE AKTIV';
+const DEFAULT_STATUS_LABEL = 'Kolonisierter Zielort';
+const DEFAULT_SCENE_SUBTITLE = 'KOLONISIERTE WELT';
 const GENERIC_ACCENT = '#67e8f9';
 
-type BodyArrivalVisualOverrides = Partial<
-  Record<
-    BodyName,
-    Partial<
-      Pick<
-        ArrivalVisualConfig,
-        | 'greeting'
-        | 'portraitLabel'
-        | 'portraitSrc'
-        | 'sceneLabel'
-        | 'sceneSrc'
-        | 'sceneSubtitle'
-        | 'statusCode'
-        | 'statusLabel'
-        | 'title'
-      >
-    >
+type ArrivalOverride = Partial<
+  Pick<
+    ArrivalVisualConfig,
+    | 'greeting'
+    | 'portraitLabel'
+    | 'portraitSrc'
+    | 'sceneLabel'
+    | 'sceneSrc'
+    | 'sceneSubtitle'
+    | 'statusCode'
+    | 'statusLabel'
+    | 'title'
   >
 >;
+
+type BodyArrivalVisualOverrides = Partial<Record<BodyName, ArrivalOverride>>;
 
 const bodyArrivalVisualOverrides: BodyArrivalVisualOverrides = {
   Erde: {
     greeting:
-      'Port Kontrolle geöffnet! Willkommen auf der Erde; bitte registrieren Sie sich umgehend und legen Sie Ihre Reisedaten offen. Ja, das ist ein Befehl.',
-    sceneSrc: earthArrivalVista,
+      'Hafenkontrolle geoeffnet. Willkommen auf der Erde; bitte registriere deine Crew umgehend und halte deine Reisedaten bereit.',
     portraitSrc: earthArrivalPortrait,
+    sceneSrc: earthArrivalVista,
   },
   Mond: {
     greeting:
-      'Port Kontrolle geöffnet! Willkommen auf dem Mond; bitte setzen Sie sich zwecks einer weiteren Leibesvisitation. Das geht auf Rechnung.',
-    sceneSrc: moonArrivalVista,
-    // title: 'Mond Base',
+      'Hafenkontrolle geoeffnet. Willkommen auf dem Mond; bitte halte dich fuer die Einreisepruefung und das Andockprotokoll bereit.',
     portraitSrc: moonArrivalPortrait,
+    sceneSrc: moonArrivalVista,
   },
   Venus: {
     greeting:
-      'Port Kontrolle geöffnet! Hey ganz schön heiß hier was? Willkommen auf der Venusstation. Vergessen Sie bitte nicht den Feuerschutz zu tragen, danke!',
-    sceneSrc: venusArrivalVista,
+      'Hafenkontrolle geoeffnet. Willkommen auf der Venusstation; fuehre bitte alle Hitzeschutzprotokolle vor dem Ausstieg aus.',
     portraitSrc: venusArrivalPortrait,
+    sceneSrc: venusArrivalVista,
   },
   Mars: {
     greeting:
-      'Port Kontrolle geöffnet! Willkommen auf dem Mars; Beziehen Sie umgehend Quartier und melden Sie sich beim Hauptkommando. Und treten Sie sich die Schuhe ab!',
-    sceneSrc: marsArrivalVista,
+      'Hafenkontrolle geoeffnet. Willkommen auf dem Mars; beziehe dein Quartier und melde dich anschliessend beim Hauptkommando.',
     portraitSrc: marsArrivalPortrait,
+    sceneSrc: marsArrivalVista,
   },
   Phobos: {
     greeting:
-      'Port Kontrolle Online! Willkommen auf Phobos; die Kolonie hat geöffnet, habitats, and mining operations for your crew.',
-    sceneSrc: phobosArrivalVista,
+      'Hafenkontrolle aktiv. Willkommen auf Phobos; die Kolonie hat ihre Docks, Habitate und Bergbauzonen fuer deine Crew geoeffnet.',
     portraitSrc: phobosArrivalPortrait,
+    sceneSrc: phobosArrivalVista,
   },
   Deimos: {
     sceneSrc: deimosArrivalVista,
-    // portraitSrc: deimosArrivalPortrait,
   },
   Merkur: {
     sceneSrc: merkurArrivalVista,
-    // portraitSrc: merkurArrivalPortrait,
   },
   Jupiter: {
     sceneSrc: jupiterArrivalVista,
-    // portraitSrc: jupiterArrivalPortrait,
   },
   Amalthea: {
     sceneSrc: amaltheaArrivalVista,
-    // portraitSrc: amaltheaArrivalPortrait,
   },
   Io: {
     sceneSrc: ioArrivalVista,
-    // portraitSrc: ioArrivalPortrait,
   },
   Europa: {
     sceneSrc: europaArrivalVista,
-    // portraitSrc: europaArrivalPortrait,
   },
   Ganymed: {
     sceneSrc: ganymedArrivalVista,
-    // portraitSrc: ganymedArrivalPortrait,
   },
   Kallisto: {
     sceneSrc: kallistoArrivalVista,
-    // portraitSrc: kallistoArrivalPortrait,
   },
   Saturn: {
     sceneSrc: saturnArrivalVista,
-    // portraitSrc: saturnArrivalPortrait,
   },
   Tethys: {
     sceneSrc: tethysArrivalVista,
-    // portraitSrc: tethysArrivalPortrait,
   },
   Dione: {
     sceneSrc: dioneArrivalVista,
-    // portraitSrc: dioneArrivalPortrait,
   },
   Rhea: {
     sceneSrc: rheaArrivalVista,
-    // portraitSrc: rheaArrivalPortrait,
   },
   Titan: {
     sceneSrc: titanArrivalVista,
-    // portraitSrc: titanArrivalPortrait,
   },
   Iapetus: {
     sceneSrc: iapetusArrivalVista,
-    // portraitSrc: iapetusArrivalPortrait,
   },
   Uranus: {
     sceneSrc: uranusArrivalVista,
-    // portraitSrc: uranusArrivalPortrait,
   },
   Miranda: {
     sceneSrc: mirandaArrivalVista,
-    // portraitSrc: mirandaArrivalPortrait,
   },
   Ariel: {
     sceneSrc: arielArrivalVista,
-    // portraitSrc: arielArrivalPortrait,
   },
   Umbriel: {
     sceneSrc: umbrielArrivalVista,
-    // portraitSrc: umbrielArrivalPortrait,
   },
   Titania: {
     sceneSrc: titaniaArrivalVista,
-    // portraitSrc: titaniaArrivalPortrait,
   },
   Oberon: {
     sceneSrc: oberonArrivalVista,
-    // portraitSrc: oberonArrivalPortrait,
   },
 };
 
@@ -210,7 +172,7 @@ function createColonyArrivalVisualConfig(locationId: BodyName): ArrivalVisualCon
   return {
     greeting:
       overrides?.greeting ??
-      `Port control is live. Welcome to ${body.label}; the colony has opened its docks, habitats, and trade concourse for your crew.`,
+      `Hafenkontrolle aktiv. Willkommen auf ${body.label}; die Kolonie hat ihre Docks, Habitate und Handelsbereiche fuer deine Crew geoeffnet.`,
     portraitLabel,
     portraitSrc:
       overrides?.portraitSrc ??
@@ -231,7 +193,7 @@ function createColonyArrivalVisualConfig(locationId: BodyName): ArrivalVisualCon
     sceneSubtitle,
     statusCode,
     statusLabel: overrides?.statusLabel ?? DEFAULT_STATUS_LABEL,
-    title: overrides?.title ?? `${body.label} Colony`,
+    title: overrides?.title ?? `${body.label} Kolonie`,
   };
 }
 
@@ -274,24 +236,24 @@ export const bodyArrivalVisualConfig = {
 
 export const scannerDiscoveryArrivalVisualConfig: ArrivalVisualConfig = {
   greeting:
-    'Automated beacons are online around this waypoint. Temporary docking clearance is granted while the survey systems sync.',
-  portraitLabel: 'Survey Controller',
+    'Automatische Baken sind rund um diesen Wegpunkt aktiv. Voruebergehende Andockerlaubnis wurde erteilt, waehrend sich die Scansysteme synchronisieren.',
+  portraitLabel: 'Sektor-Kontrolle',
   portraitSrc: createPortraitPlaceholder({
     accent: GENERIC_ACCENT,
-    label: 'Prospecting Relay',
-    role: 'Survey Controller',
-    statusLabel: 'SURVEY ONLINE',
+    label: 'Prospektions-Relais',
+    role: 'Sektor-Kontrolle',
+    statusLabel: 'SCAN AKTIV',
   }),
-  sceneLabel: 'Approach Feed',
+  sceneLabel: 'Anflugbild',
   sceneSrc: createScenePlaceholder({
     accent: GENERIC_ACCENT,
-    label: 'Prospecting Relay',
-    subtitle: 'SCANNER SITE',
+    label: 'Prospektions-Relais',
+    subtitle: 'SCANNER-ORT',
   }),
-  sceneSubtitle: 'SCANNER SITE',
-  statusCode: 'SURVEY ONLINE',
-  statusLabel: 'Unmanned waypoint',
-  title: 'Prospecting Relay',
+  sceneSubtitle: 'SCANNER-ORT',
+  statusCode: 'SCAN AKTIV',
+  statusLabel: 'Unbemannter Wegpunkt',
+  title: 'Prospektions-Relais',
 };
 
 export function getArrivalVisualConfig(
@@ -301,7 +263,7 @@ export function getArrivalVisualConfig(
   if (!locationId) {
     return {
       ...scannerDiscoveryArrivalVisualConfig,
-      greeting: `Automated beacons are online around ${fallbackLabel}. Temporary docking clearance is granted while the survey systems sync.`,
+      greeting: `Automatische Baken sind rund um ${fallbackLabel} aktiv. Voruebergehende Andockerlaubnis wurde erteilt, waehrend sich die Scansysteme synchronisieren.`,
       portraitSrc: createPortraitPlaceholder({
         accent: GENERIC_ACCENT,
         label: fallbackLabel,
@@ -313,7 +275,7 @@ export function getArrivalVisualConfig(
         label: fallbackLabel,
         subtitle: scannerDiscoveryArrivalVisualConfig.sceneSubtitle,
       }),
-      title: `${fallbackLabel} Prospecting Relay`,
+      title: `${fallbackLabel} Prospektions-Relais`,
     };
   }
 
@@ -391,7 +353,7 @@ function createScenePlaceholder({
       <rect x="54" y="54" width="1172" height="612" rx="30" fill="none" stroke="${accent}" stroke-opacity="0.38" stroke-width="3" />
       <text x="82" y="102" fill="#8cb7e8" font-family="Arial, sans-serif" font-size="24" letter-spacing="7">${subtitle}</text>
       <text x="82" y="596" fill="#ffffff" font-family="Arial, sans-serif" font-size="58" font-weight="700">${label}</text>
-      <text x="82" y="640" fill="#9ab1cf" font-family="Arial, sans-serif" font-size="28">placeholder arrival vista</text>
+      <text x="82" y="640" fill="#9ab1cf" font-family="Arial, sans-serif" font-size="28">Platzhalter fuer Ankunftsansicht</text>
     </svg>
   `);
 }

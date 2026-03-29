@@ -23,10 +23,10 @@ export function getArrivalVisuals(arrivalDialog: NonNullable<ArrivalDialogState>
 
   return {
     greeting: config.greeting,
-    portraitAlt: `${config.portraitLabel} placeholder for ${arrivalDialog.label}`,
+    portraitAlt: `${config.portraitLabel} Platzhalter fuer ${arrivalDialog.label}`,
     portraitLabel: config.portraitLabel,
     portraitSrc: config.portraitSrc,
-    sceneAlt: `${config.sceneLabel} placeholder for ${arrivalDialog.label}`,
+    sceneAlt: `${config.sceneLabel} Platzhalter fuer ${arrivalDialog.label}`,
     sceneLabel: config.sceneLabel,
     sceneSrc: config.sceneSrc,
     statusLabel: config.statusLabel,

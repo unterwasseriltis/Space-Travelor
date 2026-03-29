@@ -85,14 +85,14 @@ export function MapPanel({
     >
       <div className="flex w-full items-center justify-between gap-3 text-[10px] font-bold tracking-[0.3em] uppercase">
         <span className="text-primary">Sonnensystem (2D)</span>
-        <span className="text-slate-400">Ship lock</span>
+        <span className="text-slate-400">Schiffsfokus</span>
       </div>
       <div
         className="border-primary/25 relative size-48 overflow-hidden rounded-full border bg-[radial-gradient(circle_at_center,#09213f_0%,#02050d_72%)]"
         onWheel={handleWheel}
       >
         <div
-          aria-label="Sun position"
+          aria-label="Sonnenposition"
           className="absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-300 shadow-[0_0_20px_rgba(255,209,102,0.65)]"
           style={getMinimapMarkerStyle({ x: 0, y: 0 }, currentPosition, zoom)}
         />
@@ -117,7 +117,7 @@ export function MapPanel({
           </div>
         ))}
         <div
-          aria-label="Ship position"
+          aria-label="Schiffsposition"
           className="border-primary bg-primary/20 absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border shadow-[0_0_15px_rgba(107,243,255,0.65)]"
           data-testid="minimap-ship"
           style={{ left: '50%', top: '50%' }}
@@ -125,7 +125,7 @@ export function MapPanel({
       </div>
       <div className="flex w-full items-center gap-2">
         <Button
-          aria-label="Zoom out minimap"
+          aria-label="Minikarte herauszoomen"
           onClick={() => adjustZoom(1 / MINIMAP_ZOOM_STEP_FACTOR)}
           size="icon-xs"
           type="button"
@@ -136,7 +136,7 @@ export function MapPanel({
         <label className="flex min-w-0 flex-1 items-center gap-3 text-[10px] tracking-[0.18em] text-slate-300 uppercase">
           <span className="shrink-0">Zoom</span>
           <input
-            aria-label="Minimap zoom"
+            aria-label="Zoom der Minikarte"
             aria-valuetext={zoomLabel}
             className="accent-primary h-1 w-full cursor-pointer"
             max={MINIMAP_ZOOM_SLIDER_MAX}
@@ -154,7 +154,7 @@ export function MapPanel({
           {zoomLabel}
         </span>
         <Button
-          aria-label="Reset minimap zoom"
+          aria-label="Zoom der Minikarte zuruecksetzen"
           onClick={() => setZoom(MINIMAP_DEFAULT_ZOOM)}
           size="icon-xs"
           type="button"
@@ -163,7 +163,7 @@ export function MapPanel({
           <RotateCcwIcon />
         </Button>
         <Button
-          aria-label="Zoom in minimap"
+          aria-label="Minikarte heranzoomen"
           onClick={() => adjustZoom(MINIMAP_ZOOM_STEP_FACTOR)}
           size="icon-xs"
           type="button"
@@ -173,7 +173,7 @@ export function MapPanel({
         </Button>
       </div>
       <p className="text-[10px] tracking-[0.18em] text-slate-500 uppercase">
-        Log zoom tuned for AU-scale distances.
+        Logarithmischer Zoom fuer Distanzen in AE.
       </p>
     </div>
   );
@@ -253,24 +253,24 @@ export function NavigationPanel({
           Navigation
         </h3>
         <p className="text-xs text-slate-400">
-          Plot a course and monitor the ship while it accelerates.
+          Lege einen Kurs fest und ueberwache das Schiff waehrend des Beschleunigens.
         </p>
       </div>
       <div className="flex flex-1 flex-col gap-5">
         <div className="border-border bg-muted/45 rounded-2xl border p-4">
-          <p className="text-xs tracking-[0.28em] text-slate-400 uppercase">Current Coordinates</p>
+          <p className="text-xs tracking-[0.28em] text-slate-400 uppercase">Aktuelle Koordinaten</p>
           <p className="mt-2 font-mono text-lg text-white">{coordinatesLabel}</p>
         </div>
 
         <div className="flex flex-col gap-3">
-          <p className="text-xs tracking-[0.28em] text-slate-400 uppercase">Destination</p>
+          <p className="text-xs tracking-[0.28em] text-slate-400 uppercase">Ziel</p>
           <Select
             disabled={isTraveling}
             onValueChange={(value) => onDestinationChange(value as LocationId)}
             value={selectedDestination}
           >
             <SelectTrigger className="bg-secondary/65 h-12 w-full">
-              <SelectValue placeholder="Choose a destination" />
+              <SelectValue placeholder="Waehle ein Ziel" />
             </SelectTrigger>
             <SelectContent className="max-h-72" position="popper">
               <SelectGroup>
@@ -289,13 +289,13 @@ export function NavigationPanel({
           disabled={isTraveling}
           onClick={onStartTravel}
         >
-          {isTraveling ? 'Travel in Progress' : 'Accelerate'}
+          {isTraveling ? 'Flug laeuft' : 'Starten'}
         </Button>
 
         {isTraveling ? (
           <div className="border-primary/20 bg-primary/10 rounded-2xl border p-4">
             <div className="text-primary mb-3 flex items-center justify-between text-sm tracking-[0.18em] uppercase">
-              <span>{travelStatus === 'paused' ? 'Transit Paused' : 'Transit Countdown'}</span>
+              <span>{travelStatus === 'paused' ? 'Transit pausiert' : 'Ankunft in'}</span>
               <span>{travelCountdownLabel}</span>
             </div>
             <Progress
@@ -309,7 +309,7 @@ export function NavigationPanel({
                 type="button"
                 variant="secondary"
               >
-                {travelStatus === 'paused' ? 'Resume' : 'Pause'}
+                {travelStatus === 'paused' ? 'Fortsetzen' : 'Pause'}
               </Button>
               <Button
                 className="h-10 tracking-[0.14em] uppercase"
@@ -317,7 +317,7 @@ export function NavigationPanel({
                 type="button"
                 variant="outline"
               >
-                Abort
+                Abbrechen
               </Button>
             </div>
           </div>
@@ -353,28 +353,30 @@ export function ResourcePanel({
         <div className="flex items-start justify-between gap-3">
           <div>
             <CardTitle className="font-[family-name:var(--font-display)] text-xl tracking-[0.18em] uppercase">
-              Resources
+              Ressourcen
             </CardTitle>
-            <CardDescription>Elements, special finds, and later mission materials.</CardDescription>
+            <CardDescription>
+              Elemente, Spezialfunde und spaetere Missionsmaterialien.
+            </CardDescription>
           </div>
           <div className="bg-muted/40 flex rounded-xl p-1">
             <Button
-              aria-label="Show element resources"
+              aria-label="Elementressourcen anzeigen"
               className="h-8 px-3 text-[10px] tracking-[0.14em] uppercase"
               onClick={() => setActiveTab('elements')}
               type="button"
               variant={activeTab === 'elements' ? 'secondary' : 'ghost'}
             >
-              Elements
+              Elemente
             </Button>
             <Button
-              aria-label="Show special resources"
+              aria-label="Spezialressourcen anzeigen"
               className="h-8 px-3 text-[10px] tracking-[0.14em] uppercase"
               onClick={() => setActiveTab('special')}
               type="button"
               variant={activeTab === 'special' ? 'secondary' : 'ghost'}
             >
-              Special
+              Spezial
             </Button>
           </div>
         </div>
@@ -399,12 +401,12 @@ export function ResourcePanel({
       ) : (
         <CardContent className="grid min-h-0 grow auto-rows-[112px] grid-cols-1 content-start gap-3 overflow-y-auto pr-1">
           <SpecialResourceCard
-            description="Mit Mining Lasern aus Asteroiden und Erzvorkommen bergbar."
+            description="Mit Mining-Lasern aus Asteroiden und Erzvorkommen bergbar."
             label="Roherze"
             value={specialResources.rawOre}
           />
           <SpecialResourceCard
-            description="Seltener Fund beim Abbau mit dem Mining Laser."
+            description="Seltener Fund beim Abbau mit dem Mining-Laser."
             label="Diamanten"
             value={specialResources.diamonds}
           />
@@ -458,9 +460,11 @@ export function EquipmentPanel({
     <Card size="sm" className={cn('glass-panel hud-outline h-full min-h-0', className)}>
       <CardHeader>
         <CardTitle className="font-[family-name:var(--font-display)] text-xl tracking-[0.18em] uppercase">
-          Equipment
+          Ausruestung
         </CardTitle>
-        <CardDescription>One slot per element. Unlock at 100 units collected.</CardDescription>
+        <CardDescription>
+          Ein Slot pro Element. Freischaltung ab 100 gesammelten Einheiten.
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex min-h-0 grow flex-col gap-3 overflow-y-auto pr-1">
         {ELEMENT_SLOT_CONFIG.map((config) => {
@@ -493,7 +497,7 @@ export function EquipmentPanel({
                 <p>Bestand: {resourceAmount}</p>
                 <p>Kosten: {config.activationCost}</p>
                 <p>Effekt: {formatEquipmentEffect(config)}</p>
-                <p>Ausloesungen: {slot?.activationCount ?? 0}</p>
+                <p>Aktivierungen: {slot?.activationCount ?? 0}</p>
               </div>
 
               <p className="text-[11px] text-slate-400">
@@ -505,14 +509,14 @@ export function EquipmentPanel({
               </p>
 
               <Button
-                aria-label={`${ELEMENTS[config.element].name} slot aktivieren`}
+                aria-label={`${ELEMENTS[config.element].name}-Slot aktivieren`}
                 className="h-10 tracking-[0.14em] uppercase"
                 disabled={!canActivate}
                 onClick={() => onActivate(config.element)}
                 type="button"
                 variant={config.effectKind === 'fuel' ? 'default' : 'secondary'}
               >
-                {config.effectKind === 'fuel' ? 'Refill' : 'Activate'}
+                {config.effectKind === 'fuel' ? 'Auftanken' : 'Aktivieren'}
               </Button>
             </div>
           );
@@ -553,7 +557,7 @@ export function CargoPanel({
             {title}
           </h3>
           <p className="text-xs text-slate-400">
-            Drei feste Slots. Crafting erhoeht den Bestand, Einsatz verbraucht je 1 Ladung.
+            Drei feste Slots. Fertigung erhoeht den Bestand, Einsatz verbraucht jeweils 1 Ladung.
           </p>
         </div>
         <CraftingButton onClick={onOpenCrafting} />
@@ -572,7 +576,7 @@ export function CargoPanel({
               )}
             >
               <Button
-                aria-label={`${itemLabel} inventory item`}
+                aria-label={`${itemLabel} im Inventar einsetzen`}
                 className={cn(
                   'h-full w-full rounded-[0.9rem] px-2 text-[9px] tracking-[0.12em] uppercase',
                   !canUse && 'cursor-default opacity-70',

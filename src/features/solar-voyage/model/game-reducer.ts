@@ -43,8 +43,9 @@ import type {
   TravelState,
 } from '@/features/solar-voyage/model/types';
 
-const DEEP_SPACE_LABEL = 'Deep Space Hold';
-const FUEL_DEPLETED_NOTIFICATION = 'Fuel depleted. Recharge the hydrogen slot to resume travel.';
+const DEEP_SPACE_LABEL = 'Tiefer Weltraum';
+const FUEL_DEPLETED_NOTIFICATION =
+  'Treibstoff aufgebraucht. Lade den Wasserstoff-Slot nach, um den Flug fortzusetzen.';
 const SHIELD_BOOST_AMOUNT = 20;
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -54,8 +55,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...action.state,
         notification:
           action.source === 'import'
-            ? 'Save imported successfully.'
-            : 'Autosave restored successfully.',
+            ? 'Speicherstand erfolgreich importiert.'
+            : 'Automatische Speicherung erfolgreich wiederhergestellt.',
       };
 
     case 'mission/started':
@@ -93,7 +94,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
-        notification: 'Travel paused. The ship is holding its current vector.',
+        notification: 'Flug pausiert. Das Schiff haelt seinen aktuellen Vektor.',
         travel: {
           ...state.travel,
           status: 'paused',
@@ -107,7 +108,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
-        notification: `Travel resumed toward ${getLocationLabel(state, state.travel.target)}.`,
+        notification: `Flug in Richtung ${getLocationLabel(state, state.travel.target)} fortgesetzt.`,
         travel: {
           ...state.travel,
           status: 'active',
@@ -123,7 +124,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         currentCoordinatesOverride: getTravelPosition(state.travel),
         currentLocationLabelOverride: DEEP_SPACE_LABEL,
-        notification: 'Travel aborted. The ship remains at its current coordinates.',
+        notification: 'Flug abgebrochen. Das Schiff bleibt auf seinen aktuellen Koordinaten.',
         selectedDestination: '',
         travel: null,
       };
@@ -170,8 +171,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         equipmentSlots: nextEquipmentSlots,
         notification:
           slotConfig.effectKind === 'fuel'
-            ? `${ELEMENTS[action.element].name} slot activated. +${formatFuelValue(slotConfig.effectValue)} fuel.`
-            : `${ELEMENTS[action.element].name} slot activated. ${slotConfig.placeholderLabel} ${slotConfig.placeholderValue} placeholder applied.`,
+            ? `${ELEMENTS[action.element].name}-Slot aktiviert. +${formatFuelValue(slotConfig.effectValue)} Treibstoff.`
+            : `${ELEMENTS[action.element].name}-Slot aktiviert. ${slotConfig.placeholderLabel} ${slotConfig.placeholderValue} als Platzhalter angewendet.`,
         resources: nextResources,
         ship: nextShip,
       };
@@ -198,7 +199,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         inventorySlots: nextInventorySlots,
-        notification: `${recipe.label} crafted. Slot ${recipe.slotIndex + 1} stock increased to ${nextSlotCount}.`,
+        notification: `${recipe.label} hergestellt. Bestand in Slot ${recipe.slotIndex + 1} liegt jetzt bei ${nextSlotCount}.`,
         resources: nextResources,
       };
     }
@@ -239,14 +240,14 @@ function startTravel(state: GameState): GameState {
   ) {
     return {
       ...state,
-      notification: 'Choose a new destination before accelerating.',
+      notification: 'Waehle vor dem Start ein neues Ziel.',
     };
   }
 
   if (state.ship.fuel < requiredFuel) {
     return {
       ...state,
-      notification: `Not enough fuel. ${formatFuelValue(requiredFuel)} fuel required for this route.`,
+      notification: `Nicht genug Treibstoff. Fuer diese Route werden ${formatFuelValue(requiredFuel)} Einheiten benoetigt.`,
     };
   }
 
@@ -260,7 +261,7 @@ function startTravel(state: GameState): GameState {
     arrivalDialog: null,
     currentCoordinatesOverride: null,
     currentLocationLabelOverride: null,
-    notification: `Travel to ${destinationLabel} started.`,
+    notification: `Flug nach ${destinationLabel} gestartet.`,
     travel: {
       distanceKm: calculateTravelDistanceKm(currentCoordinates, destinationCoordinates),
       earnedResources: createInitialResources(),
@@ -348,7 +349,7 @@ function tickTravel(state: GameState): GameState {
       currentLocation: nextLocation,
       currentLocationLabelOverride: null,
       equipmentSlots: updatedEquipmentSlots,
-      notification: `Arrival confirmed. ${nextLocationLabel} reached.`,
+      notification: `Ankunft bestaetigt. ${nextLocationLabel} erreicht.`,
       resources: updatedResources,
       selectedDestination: nextSelectedDestination,
       ship: {
@@ -392,7 +393,7 @@ function handleInventoryItemPressed(state: GameState, item: InventoryItemKey): G
 
     case 'shieldBooster':
       return consumeInventoryItem(state, item, {
-        notification: `Shield Booster used. Shields +${SHIELD_BOOST_AMOUNT}%`,
+        notification: `Schild-Booster eingesetzt. Schilde +${SHIELD_BOOST_AMOUNT}%`,
         ship: {
           ...state.ship,
           shields: Math.min(100, state.ship.shields + SHIELD_BOOST_AMOUNT),
@@ -405,7 +406,7 @@ function handleInventoryItemPressed(state: GameState, item: InventoryItemKey): G
       return consumeInventoryItem(state, item, {
         discoveredLocations: [...state.discoveredLocations, ...discoveries],
         nextScannerDiscoveryId: state.nextScannerDiscoveryId + discoveries.length,
-        notification: `Scanner ping complete. ${discoveries.length} neue Ziele entdeckt.`,
+        notification: `Scannerlauf abgeschlossen. ${discoveries.length} neue Ziele entdeckt.`,
       });
     }
 
@@ -418,7 +419,7 @@ function activateMiningLaser(state: GameState): GameState {
   if (isBodyName(state.currentLocation)) {
     return {
       ...state,
-      notification: 'No raw ore deposit is available at the current location.',
+      notification: 'Am aktuellen Ort ist kein Roherz-Vorkommen verfuegbar.',
     };
   }
 
@@ -429,7 +430,7 @@ function activateMiningLaser(state: GameState): GameState {
   if (!targetDiscovery) {
     return {
       ...state,
-      notification: 'No raw ore deposit is available at the current location.',
+      notification: 'Am aktuellen Ort ist kein Roherz-Vorkommen verfuegbar.',
     };
   }
 
@@ -549,16 +550,16 @@ function createMiningLaserNotification(
   const diamondDelta = nextSpecialResources.diamonds - previousSpecialResources.diamonds;
 
   if (rawOreDelta === 0 && diamondDelta === 0) {
-    return `Mining Laser extracted base materials from ${discovery.name}. No special resources were recovered and the site is depleted.`;
+    return `Mining-Laser hat Grundmaterialien aus ${discovery.name} geborgen. Keine Spezialressourcen gefunden, Vorkommen erschoepft.`;
   }
 
   if (rawOreDelta > 0 && diamondDelta > 0) {
-    return `Mining Laser stripped ${discovery.name}: +${rawOreDelta} Roherze and +${diamondDelta} Diamanten. The site is depleted.`;
+    return `Mining-Laser hat ${discovery.name} abgebaut: +${rawOreDelta} Roherze und +${diamondDelta} Diamanten. Vorkommen erschoepft.`;
   }
 
   if (diamondDelta > 0) {
-    return `Mining Laser recovered +${diamondDelta} Diamanten from ${discovery.name}. The site is depleted.`;
+    return `Mining-Laser hat +${diamondDelta} Diamanten aus ${discovery.name} geborgen. Vorkommen erschoepft.`;
   }
 
-  return `Mining Laser recovered +${rawOreDelta} Roherze from ${discovery.name}. The site is depleted.`;
+  return `Mining-Laser hat +${rawOreDelta} Roherze aus ${discovery.name} geborgen. Vorkommen erschoepft.`;
 }

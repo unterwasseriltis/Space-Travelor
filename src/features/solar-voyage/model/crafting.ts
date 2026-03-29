@@ -22,25 +22,25 @@ export type CraftingRecipe = {
 
 export const CRAFTING_RECIPES: CraftingRecipe[] = [
   {
-    description: 'Baut einen Mining Laser fuer Slot 1 und erhoeht dessen Bestand um 1.',
+    description: 'Baut einen Mining-Laser fuer Slot 1 und erhoeht dessen Bestand um 1.',
     ingredients: [
       { amount: 100, element: 'sodium' },
       { amount: 100, element: 'magnesium' },
       { amount: 100, element: 'carbon' },
     ],
     item: 'miningLaser',
-    label: 'Mining Laser',
+    label: 'Mining-Laser',
     slotIndex: 0,
   },
   {
-    description: 'Baut einen Shield Booster fuer Slot 2 und erhoeht dessen Bestand um 1.',
+    description: 'Baut einen Schild-Booster fuer Slot 2 und erhoeht dessen Bestand um 1.',
     ingredients: [
       { amount: 100, element: 'oxygen' },
       { amount: 100, element: 'silicon' },
       { amount: 100, element: 'aluminium' },
     ],
     item: 'shieldBooster',
-    label: 'Shield Booster',
+    label: 'Schild-Booster',
     slotIndex: 1,
   },
   {

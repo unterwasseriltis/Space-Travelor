@@ -40,6 +40,7 @@ import {
   CraftingDialog,
   SettingsButton,
   SettingsDialog,
+  WelcomeDialog,
 } from '@/features/solar-voyage/ui/mission-control/dialogs';
 import { useTransitHum } from '@/features/solar-voyage/ui/mission-control/use-transit-hum';
 import {
@@ -86,6 +87,7 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [isCraftingOpen, setIsCraftingOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
 
   useTransitHum({
@@ -143,13 +145,15 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
 
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(snapshot);
-        setSettingsMessage('Current snapshot copied to the clipboard and downloaded as JSON.');
+        setSettingsMessage(
+          'Der aktuelle Spielstand wurde in die Zwischenablage kopiert und als JSON heruntergeladen.',
+        );
         return;
       }
 
-      setSettingsMessage('Current snapshot downloaded as JSON.');
+      setSettingsMessage('Der aktuelle Spielstand wurde als JSON heruntergeladen.');
     } catch {
-      setSettingsMessage('Export failed. Please try again.');
+      setSettingsMessage('Der Export ist fehlgeschlagen. Bitte versuche es erneut.');
     }
   };
 
@@ -168,14 +172,32 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       const snapshot = await importFile.text();
 
       importSnapshot(snapshot);
-      setSettingsMessage(`Imported "${importFile.name}" successfully.`);
+      setSettingsMessage(`"${importFile.name}" wurde erfolgreich importiert.`);
     } catch (error) {
       setSettingsMessage(
-        error instanceof Error ? error.message : 'Import failed. Please try another save file.',
+        error instanceof Error
+          ? error.message
+          : 'Der Import ist fehlgeschlagen. Bitte versuche eine andere Speicherdatei.',
       );
     } finally {
       event.target.value = '';
     }
+  };
+
+  const handleStartMission = () => {
+    startMission();
+    setIsSettingsOpen(false);
+    setIsWelcomeOpen(true);
+  };
+
+  const handleLoadMission = () => {
+    const didLoadMission = loadSavedMission();
+
+    if (didLoadMission) {
+      setIsSettingsOpen(false);
+    }
+
+    return didLoadMission;
   };
 
   return state.phase === 'menu' ? (
@@ -187,8 +209,8 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       onExport={handleExport}
       onImport={handleImportButtonClick}
       onImportChange={handleImportChange}
-      onLoadMission={loadSavedMission}
-      onStartMission={startMission}
+      onLoadMission={handleLoadMission}
+      onStartMission={handleStartMission}
       onCloseSettings={() => setIsSettingsOpen(false)}
       onToggleSettings={() => setIsSettingsOpen((currentOpen) => !currentOpen)}
       onToggleAudio={() => setIsAudioMuted((currentMuted) => !currentMuted)}
@@ -218,7 +240,9 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       mapLocations={mapLocations}
       notification={state.notification}
       isTraveling={isTraveling}
+      isWelcomeOpen={isWelcomeOpen}
       onClearArrivalDialog={clearArrivalDialog}
+      onCloseWelcome={() => setIsWelcomeOpen(false)}
       onExport={handleExport}
       onImport={handleImportButtonClick}
       onImportChange={handleImportChange}
@@ -301,13 +325,13 @@ function LaunchMenu({
         }}
         onImport={onImport}
       >
-        Import a save file from disk. Autosaves are written to local storage every 5 seconds during
-        a mission.
+        Importiere eine Speicherdatei von der Festplatte. Automatische Speicherungen werden waehrend
+        einer Mission alle 5 Sekunden im lokalen Speicher abgelegt.
       </SettingsDialog>
       <input
         ref={importInputRef}
         accept=".json,application/json,text/plain"
-        aria-label="Import save file"
+        aria-label="Speicherdatei importieren"
         className="sr-only"
         onChange={(event) => {
           void onImportChange(event);
@@ -319,15 +343,15 @@ function LaunchMenu({
         <div className="grid w-full items-center gap-10 xl:grid-cols-[minmax(0,740px)_1fr]">
           <section className="animate-rise flex flex-col gap-8">
             <div className="flex flex-col gap-4">
-              <Badge className="bg-primary/15 text-primary w-fit">Mission Control</Badge>
-              <p className="text-primary/80 text-sm tracking-[0.5em] uppercase">Launch Interface</p>
+              <Badge className="bg-primary/15 text-primary w-fit">Missionszentrale</Badge>
+              <p className="text-primary/80 text-sm tracking-[0.5em] uppercase">Startoberflaeche</p>
               <h1 className="font-[family-name:var(--font-display)] text-5xl leading-none tracking-[0.18em] text-white md:text-8xl">
-                Solar Voyage
+                Space Travelor
               </h1>
               <p className="max-w-2xl text-xl leading-9 text-slate-300">
-                Step into the restored cockpit and chart the next burn. The bridge is live again,
-                with the original artwork driving the whole experience. Navigation, telemetry, and
-                resource management are online and ready for the next system jump.
+                Nimm im wiederhergestellten Cockpit Platz und plane den naechsten Kurs. Bruecke,
+                Navigation, Telemetrie und Ressourcenverwaltung sind aktiv und bereit fuer den
+                naechsten Sprung durch das Sonnensystem.
               </p>
             </div>
 
@@ -336,7 +360,7 @@ function LaunchMenu({
                 className="h-14 text-lg font-bold tracking-[0.2em] uppercase"
                 onClick={onStartMission}
               >
-                New Mission
+                Neue Mission
               </Button>
               <Button
                 className="h-14 text-lg tracking-[0.2em] uppercase"
@@ -344,20 +368,20 @@ function LaunchMenu({
                 disabled={!hasSavedMission}
                 onClick={onLoadMission}
               >
-                Load Mission
+                Mission Laden
               </Button>
               <Button
                 className="h-14 text-lg tracking-[0.2em] uppercase"
                 variant="outline"
                 disabled
               >
-                Exit Sequence
+                Beenden
               </Button>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-3">
-              <LaunchMetric label="Bridge" value="Online" />
-              <LaunchMetric label="Visual Feed" value="Restored" />
+              <LaunchMetric label="Bruecke" value="Aktiv" />
+              <LaunchMetric label="Bildfeed" value="Wiederhergestellt" />
               <LaunchMetric label="Stack" value="React TS" />
             </div>
           </section>
@@ -382,12 +406,14 @@ function MissionWorkspace({
   inventorySlots,
   isCraftingOpen,
   isSettingsOpen,
+  isWelcomeOpen,
   missionTimerLabel,
   missionViewportLayout,
   mapLocations,
   notification,
   isTraveling,
   onClearArrivalDialog,
+  onCloseWelcome,
   onExport,
   onImport,
   onImportChange,
@@ -427,12 +453,14 @@ function MissionWorkspace({
   inventorySlots: InventorySlotState[];
   isCraftingOpen: boolean;
   isSettingsOpen: boolean;
+  isWelcomeOpen: boolean;
   missionTimerLabel: string;
   missionViewportLayout: MissionViewportLayout;
   mapLocations: MapLocation[];
   notification: string | null;
   isTraveling: boolean;
   onClearArrivalDialog: () => void;
+  onCloseWelcome: () => void;
   onExport: () => Promise<void>;
   onImport: () => void;
   onImportChange: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
@@ -480,9 +508,10 @@ function MissionWorkspace({
         }}
         onImport={onImport}
       >
-        Export a live snapshot of the current mission or import a JSON save file. Autosave keeps
-        local storage in sync every 5 seconds.
+        Exportiere einen Live-Spielstand der aktuellen Mission oder importiere eine JSON-Datei. Die
+        automatische Speicherung haelt den lokalen Speicher alle 5 Sekunden synchron.
       </SettingsDialog>
+      <WelcomeDialog isOpen={isWelcomeOpen} onClose={onCloseWelcome} />
       <ArrivalDialog
         arrivalDialog={arrivalDialog}
         isOpen={Boolean(arrivalDialog)}
@@ -498,7 +527,7 @@ function MissionWorkspace({
       <input
         ref={importInputRef}
         accept=".json,application/json,text/plain"
-        aria-label="Import save file"
+        aria-label="Speicherdatei importieren"
         className="sr-only"
         onChange={(event) => {
           void onImportChange(event);
@@ -543,7 +572,7 @@ function MissionWorkspace({
                 <div className="flex items-center justify-end gap-2">
                   <Badge className="bg-accent/20 text-accent">Status</Badge>
                   <span className="text-lg font-medium text-slate-200">
-                    {travel ? 'In transit' : currentMapLocation ? 'Docked' : 'Holding'}
+                    {travel ? 'Im Transit' : currentMapLocation ? 'Angedockt' : 'Warteschleife'}
                   </span>
                 </div>
               </div>
@@ -616,7 +645,7 @@ function MissionWorkspace({
                 inventorySlots={inventorySlots}
                 onInventoryItemClick={onInventoryItemClick}
                 onOpenCrafting={onToggleCrafting}
-                title="Inventory"
+                title="Inventar"
               />
             </aside>
           </section>
@@ -627,5 +656,5 @@ function MissionWorkspace({
 }
 
 function createSaveFileName() {
-  return `solar-voyage-save-${new Date().toISOString().replaceAll(':', '-')}.json`;
+  return `space-travelor-save-${new Date().toISOString().replaceAll(':', '-')}.json`;
 }
