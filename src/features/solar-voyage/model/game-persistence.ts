@@ -1,6 +1,10 @@
 import { celestialBodies } from '@/features/solar-voyage/domain/solar-system';
 import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
 import {
+  createInitialInventorySlots,
+  INVENTORY_SLOT_COUNT,
+} from '@/features/solar-voyage/model/crafting';
+import {
   createInitialEquipmentSlots,
   INITIAL_FUEL,
   MAX_FUEL,
@@ -12,6 +16,8 @@ import type {
   EquipmentSlotState,
   GamePhase,
   GameState,
+  InventoryItemKey,
+  InventorySlotState,
   ResourceState,
   ShipState,
   TravelState,
@@ -129,6 +135,7 @@ function validateGameState(gameState: unknown): GameState {
   const ship = validateShipState(stateRecord.ship);
   const resources = validateResourceState(stateRecord.resources, 'Resource totals are invalid.');
   const equipmentSlots = validateEquipmentSlots(stateRecord.equipmentSlots, resources);
+  const inventorySlots = validateInventorySlots(stateRecord.inventorySlots);
   const travel = validateTravelState(stateRecord.travel);
   const notification = validateNotification(stateRecord.notification);
 
@@ -144,6 +151,7 @@ function validateGameState(gameState: unknown): GameState {
     ship,
     resources,
     equipmentSlots,
+    inventorySlots,
     travel,
     notification,
   };
@@ -275,9 +283,35 @@ function validateNotification(value: unknown) {
   throw new Error('Save notification is invalid.');
 }
 
+function validateInventorySlots(value: unknown): InventorySlotState[] {
+  if (value === undefined) {
+    return createInitialInventorySlots();
+  }
+
+  if (!Array.isArray(value) || value.length !== INVENTORY_SLOT_COUNT) {
+    throw new Error('Inventory slots are invalid.');
+  }
+
+  return value.map((entry) => {
+    if (entry === null) {
+      return null;
+    }
+
+    return validateInventoryItemKey(entry, 'Inventory item is invalid.');
+  });
+}
+
 function validateElementKey(value: unknown, errorMessage: string): ElementKey {
   if (typeof value === 'string' && value in ELEMENTS) {
     return value as ElementKey;
+  }
+
+  throw new Error(errorMessage);
+}
+
+function validateInventoryItemKey(value: unknown, errorMessage: string): InventoryItemKey {
+  if (value === 'miningLaser' || value === 'shieldBooster' || value === 'scannerModule') {
+    return value;
   }
 
   throw new Error(errorMessage);

@@ -107,6 +107,57 @@ describe('MissionControl component', () => {
     ).toBeInTheDocument();
   });
 
+  it('opens the crafting window and crafts the mining laser into inventory slot 1', async () => {
+    const user = userEvent.setup();
+    const initialState = createInitialGameState();
+    const savedState = {
+      ...initialState,
+      phase: 'mission' as const,
+      resources: {
+        ...initialState.resources,
+        carbon: 100,
+        magnesium: 100,
+        sodium: 100,
+      },
+    };
+
+    localStorage.setItem(GAME_STATE_STORAGE_KEY, serializeGameStateSnapshot(savedState));
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    await user.click(screen.getByRole('button', { name: /load mission/i }));
+    await user.click(screen.getByRole('button', { name: /open crafting/i }));
+    await user.click(screen.getByRole('button', { name: /craft mining laser/i }));
+
+    expect(
+      screen.getByRole('button', { name: /mining laser inventory item/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/mining laser crafted and moved to inventory slot 1\./i),
+    ).toBeInTheDocument();
+  });
+
+  it('shows a placeholder notification when a crafted inventory item is clicked', async () => {
+    const user = userEvent.setup();
+    const initialState = createInitialGameState();
+    const savedState = {
+      ...initialState,
+      inventorySlots: ['miningLaser', null, null, null, null, null, null, null, null],
+      phase: 'mission' as const,
+    };
+
+    localStorage.setItem(GAME_STATE_STORAGE_KEY, serializeGameStateSnapshot(savedState));
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    await user.click(screen.getByRole('button', { name: /load mission/i }));
+    await user.click(screen.getByRole('button', { name: /mining laser inventory item/i }));
+
+    expect(
+      screen.getByText(/mining laser is ready, but its action is not implemented yet\./i),
+    ).toBeInTheDocument();
+  });
+
   it('exports the current mission snapshot from the settings dialog', async () => {
     const user = userEvent.setup();
     const clipboardWriteText = vi.fn().mockResolvedValue(undefined);

@@ -147,6 +147,50 @@ describe('gameReducer integration', () => {
     expect(nextState.notification).toContain('placeholder applied');
   });
 
+  it('crafts the mining laser into the first inventory slot and consumes its resources', () => {
+    const initialState = createInitialGameState();
+    const missionState = {
+      ...initialState,
+      phase: 'mission' as const,
+      resources: {
+        ...initialState.resources,
+        carbon: 100,
+        magnesium: 100,
+        sodium: 100,
+      },
+    };
+
+    const nextState = gameReducer(missionState, {
+      type: 'crafting/itemCrafted',
+      item: 'miningLaser',
+    });
+
+    expect(nextState.inventorySlots[0]).toBe('miningLaser');
+    expect(nextState.resources.sodium).toBe(0);
+    expect(nextState.resources.magnesium).toBe(0);
+    expect(nextState.resources.carbon).toBe(0);
+  });
+
+  it('does not craft an inventory item when resources are missing', () => {
+    const initialState = createInitialGameState();
+    const missionState = {
+      ...initialState,
+      phase: 'mission' as const,
+      resources: {
+        ...initialState.resources,
+        carbon: 100,
+        sodium: 100,
+      },
+    };
+
+    const nextState = gameReducer(missionState, {
+      type: 'crafting/itemCrafted',
+      item: 'miningLaser',
+    });
+
+    expect(nextState).toEqual(missionState);
+  });
+
   it('blocks travel when there is not enough fuel for the route', () => {
     const initialState = createInitialGameState();
     const missionState = {
@@ -222,5 +266,21 @@ describe('gameReducer integration', () => {
       ...importedState,
       notification: 'Save imported successfully.',
     });
+  });
+
+  it('shows a placeholder notification when a crafted inventory item is pressed', () => {
+    const initialState = createInitialGameState();
+    const missionState = {
+      ...initialState,
+      inventorySlots: ['miningLaser', null, null, null, null, null, null, null, null],
+      phase: 'mission' as const,
+    };
+
+    const nextState = gameReducer(missionState, {
+      type: 'inventory/itemPressed',
+      item: 'miningLaser',
+    });
+
+    expect(nextState.notification).toContain('Mining Laser is ready');
   });
 });

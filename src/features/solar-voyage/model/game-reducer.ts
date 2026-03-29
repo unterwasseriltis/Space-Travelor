@@ -13,6 +13,11 @@ import {
   syncEquipmentSlotsWithResources,
 } from '@/features/solar-voyage/model/equipment';
 import {
+  canCraftItem,
+  getCraftingRecipe,
+  getInventoryItemLabel,
+} from '@/features/solar-voyage/model/crafting';
+import {
   createInitialGameState,
   createInitialResources,
   getInitialDestination,
@@ -229,6 +234,38 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ship: nextShip,
       };
     }
+
+    case 'crafting/itemCrafted': {
+      if (
+        state.phase !== 'mission' ||
+        !canCraftItem(state.resources, state.inventorySlots, action.item)
+      ) {
+        return state;
+      }
+
+      const recipe = getCraftingRecipe(action.item);
+      const nextResources = { ...state.resources };
+
+      recipe.ingredients.forEach((ingredient) => {
+        nextResources[ingredient.element] -= ingredient.amount;
+      });
+
+      const nextInventorySlots = [...state.inventorySlots];
+      nextInventorySlots[recipe.slotIndex] = action.item;
+
+      return {
+        ...state,
+        inventorySlots: nextInventorySlots,
+        notification: `${recipe.label} crafted and moved to inventory slot ${recipe.slotIndex + 1}.`,
+        resources: nextResources,
+      };
+    }
+
+    case 'inventory/itemPressed':
+      return {
+        ...state,
+        notification: `${getInventoryItemLabel(action.item)} is ready, but its action is not implemented yet.`,
+      };
 
     case 'notification/cleared':
       return {

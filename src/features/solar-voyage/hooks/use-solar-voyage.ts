@@ -17,7 +17,7 @@ import {
   getTravelCountdownLabel,
   getTravelProgress,
 } from '@/features/solar-voyage/model/selectors';
-import type { ElementKey } from '@/features/solar-voyage/model/types';
+import type { ElementKey, InventoryItemKey } from '@/features/solar-voyage/model/types';
 
 export function useSolarVoyage() {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);
@@ -120,6 +120,10 @@ export function useSolarVoyage() {
     startTravel: () => dispatch({ type: 'travel/started' }),
     activateEquipmentSlot: (element: ElementKey) =>
       dispatch({ type: 'equipment/slotActivated', element }),
+    craftInventoryItem: (item: InventoryItemKey) =>
+      dispatch({ type: 'crafting/itemCrafted', item }),
+    pressInventoryItem: (item: InventoryItemKey) =>
+      dispatch({ type: 'inventory/itemPressed', item }),
     clearNotification: () => dispatch({ type: 'notification/cleared' }),
     exportSnapshot: () => serializeGameStateSnapshot(state),
     importSnapshot: (rawSnapshot: string) => restoreState('import', rawSnapshot),

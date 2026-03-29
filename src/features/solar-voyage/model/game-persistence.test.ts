@@ -51,6 +51,7 @@ describe('game persistence', () => {
     expect(migratedState.ship.fuel).toBe(100);
     expect(migratedState.ship.maxFuel).toBe(100);
     expect(migratedState.equipmentSlots).toHaveLength(14);
+    expect(migratedState.inventorySlots).toHaveLength(9);
     expect(migratedState.equipmentSlots.find((slot) => slot.element === 'hydrogen')?.unlocked).toBe(
       true,
     );

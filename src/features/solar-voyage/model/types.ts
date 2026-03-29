@@ -30,6 +30,8 @@ export type EquipmentSlotState = {
 };
 
 export type EquipmentEffectKind = 'fuel' | 'placeholder';
+export type InventoryItemKey = 'miningLaser' | 'shieldBooster' | 'scannerModule';
+export type InventorySlotState = InventoryItemKey | null;
 
 export type ShipState = {
   hull: number;
@@ -55,6 +57,7 @@ export type GameState = {
   ship: ShipState;
   resources: ResourceState;
   equipmentSlots: EquipmentSlotState[];
+  inventorySlots: InventorySlotState[];
   travel: TravelState | null;
   notification: string | null;
 };
@@ -67,5 +70,7 @@ export type GameAction =
   | { type: 'travel/ticked' }
   | { type: 'equipment/slotUnlocked'; element: ElementKey }
   | { type: 'equipment/slotActivated'; element: ElementKey }
+  | { type: 'crafting/itemCrafted'; item: InventoryItemKey }
+  | { type: 'inventory/itemPressed'; item: InventoryItemKey }
   | { type: 'notification/cleared' }
   | { type: 'state/restored'; source: 'autosave' | 'import'; state: GameState };
