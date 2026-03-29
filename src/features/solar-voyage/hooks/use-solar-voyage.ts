@@ -1,5 +1,4 @@
 import { useEffect, useReducer, useRef } from 'react';
-import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
 
 import { gameReducer } from '@/features/solar-voyage/model/game-reducer';
 import {
@@ -12,16 +11,19 @@ import { createInitialGameState } from '@/features/solar-voyage/model/game-state
 import {
   getAvailableDestinations,
   getCurrentCoordinatesLabel,
+  getCurrentLocationLabel,
   getCurrentPosition,
+  getMapMarkers,
   getMissionTimerLabel,
   getTravelCountdownLabel,
   getTravelProgress,
 } from '@/features/solar-voyage/model/selectors';
-import type { ElementKey } from '@/features/solar-voyage/model/types';
+import type { ElementKey, InventoryItemKey, LocationId } from '@/features/solar-voyage/model/types';
 
 export function useSolarVoyage() {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);
   const isTraveling = Boolean(state.travel);
+  const isTravelActive = state.travel?.status === 'active';
   const hasSavedMission = state.phase === 'mission' || loadStoredGameState() !== null;
   const latestStateRef = useRef(state);
 
@@ -44,7 +46,7 @@ export function useSolarVoyage() {
   }, [state.phase]);
 
   useEffect(() => {
-    if (!isTraveling) {
+    if (!isTravelActive) {
       return undefined;
     }
 
@@ -55,7 +57,7 @@ export function useSolarVoyage() {
     return () => {
       window.clearInterval(timer);
     };
-  }, [isTraveling]);
+  }, [isTravelActive]);
 
   useEffect(() => {
     if (state.phase !== 'mission') {
@@ -108,18 +110,30 @@ export function useSolarVoyage() {
   return {
     state,
     hasSavedMission,
-    availableDestinations: getAvailableDestinations(state.currentLocation),
+    availableDestinations: getAvailableDestinations(state),
     coordinatesLabel: getCurrentCoordinatesLabel(state),
+    currentLocationLabel: getCurrentLocationLabel(state),
     missionTimerLabel: getMissionTimerLabel(state),
+    isTraveling,
     travelCountdownLabel: getTravelCountdownLabel(state),
     travelProgress: getTravelProgress(state),
+    travelStatus: state.travel?.status ?? null,
     currentPosition: getCurrentPosition(state),
+    mapLocations: getMapMarkers(state),
     startMission: () => dispatch({ type: 'mission/started' }),
-    selectDestination: (destination: BodyName | '') =>
+    selectDestination: (destination: LocationId | '') =>
       dispatch({ type: 'destination/selected', destination }),
     startTravel: () => dispatch({ type: 'travel/started' }),
+    pauseTravel: () => dispatch({ type: 'travel/paused' }),
+    resumeTravel: () => dispatch({ type: 'travel/resumed' }),
+    abortTravel: () => dispatch({ type: 'travel/aborted' }),
     activateEquipmentSlot: (element: ElementKey) =>
       dispatch({ type: 'equipment/slotActivated', element }),
+    craftInventoryItem: (item: InventoryItemKey) =>
+      dispatch({ type: 'crafting/itemCrafted', item }),
+    pressInventoryItem: (item: InventoryItemKey) =>
+      dispatch({ type: 'inventory/itemPressed', item }),
+    clearArrivalDialog: () => dispatch({ type: 'arrivalDialog/cleared' }),
     clearNotification: () => dispatch({ type: 'notification/cleared' }),
     exportSnapshot: () => serializeGameStateSnapshot(state),
     importSnapshot: (rawSnapshot: string) => restoreState('import', rawSnapshot),

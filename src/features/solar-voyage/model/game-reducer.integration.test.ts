@@ -77,8 +77,11 @@ describe('gameReducer integration', () => {
         distanceKm: 100,
         earnedResources,
         origin: 'Erde' as const,
+        originCoordinates: { x: 1, y: 0 },
         remainingSeconds: 2,
+        status: 'active' as const,
         target: 'Mars' as const,
+        targetCoordinates: { x: 1.524, y: 0.85 },
         totalSeconds: 101,
       },
     };
@@ -147,6 +150,50 @@ describe('gameReducer integration', () => {
     expect(nextState.notification).toContain('placeholder applied');
   });
 
+  it('crafts the mining laser into the first inventory slot and consumes its resources', () => {
+    const initialState = createInitialGameState();
+    const missionState = {
+      ...initialState,
+      phase: 'mission' as const,
+      resources: {
+        ...initialState.resources,
+        carbon: 100,
+        magnesium: 100,
+        sodium: 100,
+      },
+    };
+
+    const nextState = gameReducer(missionState, {
+      type: 'crafting/itemCrafted',
+      item: 'miningLaser',
+    });
+
+    expect(nextState.inventorySlots[0]).toEqual({ count: 1, item: 'miningLaser' });
+    expect(nextState.resources.sodium).toBe(0);
+    expect(nextState.resources.magnesium).toBe(0);
+    expect(nextState.resources.carbon).toBe(0);
+  });
+
+  it('does not craft an inventory item when resources are missing', () => {
+    const initialState = createInitialGameState();
+    const missionState = {
+      ...initialState,
+      phase: 'mission' as const,
+      resources: {
+        ...initialState.resources,
+        carbon: 100,
+        sodium: 100,
+      },
+    };
+
+    const nextState = gameReducer(missionState, {
+      type: 'crafting/itemCrafted',
+      item: 'miningLaser',
+    });
+
+    expect(nextState).toEqual(missionState);
+  });
+
   it('blocks travel when there is not enough fuel for the route', () => {
     const initialState = createInitialGameState();
     const missionState = {
@@ -178,8 +225,11 @@ describe('gameReducer integration', () => {
         distanceKm: 100,
         earnedResources: createInitialResources(),
         origin: 'Erde' as const,
+        originCoordinates: { x: 1, y: 0 },
         remainingSeconds: 3,
+        status: 'active' as const,
         target: 'Mars' as const,
+        targetCoordinates: { x: 1.524, y: 0.85 },
         totalSeconds: 3,
       },
     };
@@ -222,5 +272,137 @@ describe('gameReducer integration', () => {
       ...importedState,
       notification: 'Save imported successfully.',
     });
+  });
+
+  it('uses a shield booster from inventory and restores shields', () => {
+    const initialState = createInitialGameState();
+    const missionState = {
+      ...initialState,
+      inventorySlots: [
+        { count: 0, item: 'miningLaser' },
+        { count: 1, item: 'shieldBooster' },
+        { count: 0, item: 'scannerModule' },
+      ],
+      phase: 'mission' as const,
+      ship: {
+        ...initialState.ship,
+        shields: 60,
+      },
+    };
+
+    const nextState = gameReducer(missionState, {
+      type: 'inventory/itemPressed',
+      item: 'shieldBooster',
+    });
+
+    expect(nextState.ship.shields).toBe(80);
+    expect(nextState.inventorySlots[1].count).toBe(0);
+    expect(nextState.notification).toContain('Shield Booster used');
+  });
+
+  it('uses the scanner to discover one to three new mining destinations', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockImplementation(() => 0.5);
+    const initialState = createInitialGameState();
+    const missionState = {
+      ...initialState,
+      inventorySlots: [
+        { count: 0, item: 'miningLaser' },
+        { count: 0, item: 'shieldBooster' },
+        { count: 1, item: 'scannerModule' },
+      ],
+      phase: 'mission' as const,
+    };
+
+    const nextState = gameReducer(missionState, {
+      type: 'inventory/itemPressed',
+      item: 'scannerModule',
+    });
+
+    expect(nextState.discoveredLocations.length).toBeGreaterThanOrEqual(1);
+    expect(nextState.discoveredLocations.length).toBeLessThanOrEqual(3);
+    expect(nextState.inventorySlots[2].count).toBe(0);
+    expect(nextState.notification).toContain('Scanner ping complete');
+    randomSpy.mockRestore();
+  });
+
+  it('uses the mining laser on a discovered site, gains resources, and removes the location', () => {
+    const randomSpy = vi
+      .spyOn(Math, 'random')
+      .mockReturnValueOnce(0.95)
+      .mockReturnValueOnce(0.5)
+      .mockReturnValueOnce(0.2);
+    const initialState = createInitialGameState();
+    const missionState = {
+      ...initialState,
+      currentLocation: 'scanner-site-1' as const,
+      discoveredLocations: [
+        {
+          anchor: 'Mars' as const,
+          color: '#f59e0b',
+          id: 'scanner-site-1' as const,
+          kind: 'oreDeposit' as const,
+          name: 'Erzvorkommen 1',
+          resourceYield: {
+            ...initialState.resources,
+            magnesium: 40,
+            sodium: 50,
+          },
+          x: 1.8,
+          y: 0.9,
+        },
+      ],
+      inventorySlots: [
+        { count: 1, item: 'miningLaser' },
+        { count: 0, item: 'shieldBooster' },
+        { count: 0, item: 'scannerModule' },
+      ],
+      phase: 'mission' as const,
+    };
+
+    const nextState = gameReducer(missionState, {
+      type: 'inventory/itemPressed',
+      item: 'miningLaser',
+    });
+
+    expect(nextState.currentLocation).toBe('Mars');
+    expect(nextState.discoveredLocations).toHaveLength(0);
+    expect(nextState.inventorySlots[0].count).toBe(0);
+    expect(nextState.resources.sodium).toBe(50);
+    expect(nextState.resources.magnesium).toBe(40);
+    expect(nextState.specialResources.rawOre).toBeGreaterThan(0);
+    expect(nextState.specialResources.diamonds).toBeGreaterThan(0);
+    expect(nextState.notification).toContain('depleted');
+    randomSpy.mockRestore();
+  });
+
+  it('can pause and abort a running trip while keeping the current coordinates', () => {
+    let state = createInitialGameState();
+
+    state = gameReducer(state, { type: 'mission/started' });
+    state = gameReducer(state, { type: 'destination/selected', destination: 'Mars' });
+    state = gameReducer(state, { type: 'travel/started' });
+
+    state = gameReducer(state, { type: 'travel/ticked' });
+    state = gameReducer(state, { type: 'travel/paused' });
+
+    expect(state.travel?.status).toBe('paused');
+
+    const pausedTravel = state.travel!;
+    const expectedX =
+      pausedTravel.originCoordinates.x * (1 - 1 / pausedTravel.totalSeconds) +
+      pausedTravel.targetCoordinates.x * (1 / pausedTravel.totalSeconds);
+    const expectedY =
+      pausedTravel.originCoordinates.y * (1 - 1 / pausedTravel.totalSeconds) +
+      pausedTravel.targetCoordinates.y * (1 / pausedTravel.totalSeconds);
+
+    state = gameReducer(state, { type: 'travel/aborted' });
+
+    expect(state.travel).toBeNull();
+    expect(state.currentCoordinatesOverride).toEqual({
+      x: expectedX,
+      y: expectedY,
+    });
+    expect(state.currentLocationLabelOverride).toBe('Deep Space Hold');
+    expect(state.notification).toContain('Travel aborted');
   });
 });

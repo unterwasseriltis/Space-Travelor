@@ -37,6 +37,8 @@ describe('MissionControl component', () => {
 
     expect(screen.getByText(/transit countdown/i)).toBeInTheDocument();
     expect(screen.getByText('1:00')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /pause/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abort/i })).toBeInTheDocument();
   });
 
   it('keeps the ship centered while minimap zoom changes', async () => {
@@ -105,6 +107,75 @@ describe('MissionControl component', () => {
     expect(
       within(screen.getByTestId('equipment-slot-hydrogen')).getByText(/bestand: 0/i),
     ).toBeInTheDocument();
+  });
+
+  it('opens the crafting window and crafts the mining laser into inventory slot 1', async () => {
+    const user = userEvent.setup();
+    const initialState = createInitialGameState();
+    const savedState = {
+      ...initialState,
+      phase: 'mission' as const,
+      resources: {
+        ...initialState.resources,
+        carbon: 100,
+        magnesium: 100,
+        sodium: 100,
+      },
+    };
+
+    localStorage.setItem(GAME_STATE_STORAGE_KEY, serializeGameStateSnapshot(savedState));
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    await user.click(screen.getByRole('button', { name: /load mission/i }));
+    await user.click(screen.getByRole('button', { name: /open crafting/i }));
+    await user.click(screen.getByRole('button', { name: /craft mining laser/i }));
+
+    expect(
+      screen.getByRole('button', { name: /mining laser inventory item/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/slot 1 stock increased to 1/i)).toBeInTheDocument();
+  });
+
+  it('uses a crafted shield booster from inventory', async () => {
+    const user = userEvent.setup();
+    const initialState = createInitialGameState();
+    const savedState = {
+      ...initialState,
+      inventorySlots: [
+        { count: 0, item: 'miningLaser' },
+        { count: 1, item: 'shieldBooster' },
+        { count: 0, item: 'scannerModule' },
+      ],
+      phase: 'mission' as const,
+      ship: {
+        ...initialState.ship,
+        shields: 70,
+      },
+    };
+
+    localStorage.setItem(GAME_STATE_STORAGE_KEY, serializeGameStateSnapshot(savedState));
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    await user.click(screen.getByRole('button', { name: /load mission/i }));
+    await user.click(screen.getByRole('button', { name: /shield booster inventory item/i }));
+
+    expect(screen.getByText('90%')).toBeInTheDocument();
+    expect(screen.getByText(/shield booster used/i)).toBeInTheDocument();
+  });
+
+  it('switches the resource panel to special resources', async () => {
+    const user = userEvent.setup();
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    await user.click(screen.getByRole('button', { name: /new mission/i }));
+    await user.click(screen.getByRole('button', { name: /show special resources/i }));
+
+    expect(screen.getByText(/roherze/i)).toBeInTheDocument();
+    expect(screen.getByText(/diamanten/i)).toBeInTheDocument();
+    expect(screen.getByText(/plasma/i)).toBeInTheDocument();
   });
 
   it('exports the current mission snapshot from the settings dialog', async () => {
@@ -188,4 +259,45 @@ describe('MissionControl component', () => {
     expect(savedSnapshot).toBeTruthy();
     expect(restoredSnapshot.missionElapsedSeconds).toBeGreaterThanOrEqual(5);
   }, 10000);
+
+  it('opens an arrival dialog when the ship reaches its destination', () => {
+    vi.useFakeTimers();
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /new mission/i }));
+    fireEvent.click(screen.getByRole('button', { name: /accelerate/i }));
+
+    act(() => {
+      vi.advanceTimersByTime(60000);
+    });
+
+    expect(screen.getByText(/willkommen auf dem mond\./i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^ok\.$/i }));
+
+    expect(screen.queryByText(/willkommen auf dem mond\./i)).not.toBeInTheDocument();
+  });
+
+  it('can abort a trip and keeps the ship at its current coordinates', () => {
+    vi.useFakeTimers();
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /new mission/i }));
+    fireEvent.click(screen.getByRole('button', { name: /accelerate/i }));
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    const coordinatesBeforeAbort = screen.getByText(/x:/i).textContent;
+
+    fireEvent.click(screen.getByRole('button', { name: /abort/i }));
+
+    expect(screen.getByText(/deep space hold/i)).toBeInTheDocument();
+    expect(screen.queryByText(/transit countdown/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/travel aborted/i)).toBeInTheDocument();
+    expect(screen.getByText(coordinatesBeforeAbort ?? '')).toBeInTheDocument();
+  });
 });

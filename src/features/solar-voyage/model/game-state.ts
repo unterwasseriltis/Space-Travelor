@@ -1,31 +1,34 @@
 import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
+import { createInitialInventorySlots } from '@/features/solar-voyage/model/crafting';
 import {
   createInitialEquipmentSlots,
   INITIAL_FUEL,
   MAX_FUEL,
 } from '@/features/solar-voyage/model/equipment';
-import { ELEMENTS } from '@/features/solar-voyage/model/types';
-import type { ElementKey, GameState } from '@/features/solar-voyage/model/types';
+import {
+  createEmptyResourceState,
+  createEmptySpecialResourceState,
+} from '@/features/solar-voyage/model/types';
+import type { GameState, LocationId } from '@/features/solar-voyage/model/types';
 
-export const inventoryItemLabels = Array.from({ length: 9 }, (_, index) => `Item ${index + 1}`);
-
-export function getInitialDestination(currentLocation: BodyName): BodyName {
+export function getInitialDestination(currentLocation: BodyName): LocationId {
   return currentLocation === 'Erde' ? 'Mond' : 'Erde';
 }
 
-export function createInitialResources(): Record<ElementKey, number> {
-  const resources = {} as Record<ElementKey, number>;
-  Object.keys(ELEMENTS).forEach((key) => {
-    resources[key as ElementKey] = 0;
-  });
-  return resources;
+export function createInitialResources() {
+  return createEmptyResourceState();
 }
 
 export function createInitialGameState(): GameState {
   return {
+    arrivalDialog: null,
     phase: 'menu',
     currentLocation: 'Erde',
+    currentCoordinatesOverride: null,
+    currentLocationLabelOverride: null,
+    discoveredLocations: [],
     missionElapsedSeconds: 0,
+    nextScannerDiscoveryId: 1,
     selectedDestination: getInitialDestination('Erde'),
     ship: {
       hull: 100,
@@ -34,7 +37,9 @@ export function createInitialGameState(): GameState {
       maxFuel: MAX_FUEL,
     },
     resources: createInitialResources(),
+    specialResources: createEmptySpecialResourceState(),
     equipmentSlots: createInitialEquipmentSlots(),
+    inventorySlots: createInitialInventorySlots(),
     travel: null,
     notification: null,
   };

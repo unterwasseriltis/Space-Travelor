@@ -1,4 +1,4 @@
-import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
+import type { BodyName, Coordinates } from '@/features/solar-voyage/domain/solar-system';
 
 export type GamePhase = 'menu' | 'mission';
 
@@ -23,6 +23,33 @@ export type ElementKey = keyof typeof ELEMENTS;
 
 export type ResourceState = Record<ElementKey, number>;
 
+export function createEmptyResourceState(): ResourceState {
+  const resources = {} as ResourceState;
+
+  Object.keys(ELEMENTS).forEach((key) => {
+    resources[key as ElementKey] = 0;
+  });
+
+  return resources;
+}
+
+export const SPECIAL_RESOURCES = {
+  rawOre: { label: 'Roherze', symbol: 'Ore' },
+  diamonds: { label: 'Diamanten', symbol: 'Dia' },
+  plasma: { label: 'Plasma', symbol: 'Pls' },
+} as const;
+
+export type SpecialResourceKey = keyof typeof SPECIAL_RESOURCES;
+export type SpecialResourceState = Record<SpecialResourceKey, number>;
+
+export function createEmptySpecialResourceState(): SpecialResourceState {
+  return {
+    diamonds: 0,
+    plasma: 0,
+    rawOre: 0,
+  };
+}
+
 export type EquipmentSlotState = {
   element: ElementKey;
   unlocked: boolean;
@@ -30,6 +57,29 @@ export type EquipmentSlotState = {
 };
 
 export type EquipmentEffectKind = 'fuel' | 'placeholder';
+export type InventoryItemKey = 'miningLaser' | 'shieldBooster' | 'scannerModule';
+export type InventorySlotState = {
+  count: number;
+  item: InventoryItemKey;
+};
+
+export type ScannerDiscoveryId = `scanner-site-${number}`;
+export type LocationId = BodyName | ScannerDiscoveryId;
+
+export type ScannerDiscoveryKind = 'asteroidCluster' | 'debrisField' | 'oreDeposit';
+
+export type ScannerDiscoveryState = Coordinates & {
+  anchor: BodyName;
+  color: string;
+  id: ScannerDiscoveryId;
+  kind: ScannerDiscoveryKind;
+  name: string;
+  resourceYield: ResourceState;
+};
+
+export type ArrivalDialogState = {
+  message: string;
+} | null;
 
 export type ShipState = {
   hull: number;
@@ -38,23 +88,35 @@ export type ShipState = {
   maxFuel: number;
 };
 
+export type TravelStatus = 'active' | 'paused';
+
 export type TravelState = {
-  origin: BodyName;
-  target: BodyName;
+  origin: LocationId;
+  originCoordinates: Coordinates;
+  target: LocationId;
+  targetCoordinates: Coordinates;
   totalSeconds: number;
   remainingSeconds: number;
   distanceKm: number;
   earnedResources: ResourceState;
+  status: TravelStatus;
 };
 
 export type GameState = {
   phase: GamePhase;
-  currentLocation: BodyName;
+  arrivalDialog: ArrivalDialogState;
+  currentLocation: LocationId;
+  currentCoordinatesOverride: Coordinates | null;
+  currentLocationLabelOverride: string | null;
+  discoveredLocations: ScannerDiscoveryState[];
   missionElapsedSeconds: number;
-  selectedDestination: BodyName | '';
+  nextScannerDiscoveryId: number;
+  selectedDestination: LocationId | '';
   ship: ShipState;
   resources: ResourceState;
+  specialResources: SpecialResourceState;
   equipmentSlots: EquipmentSlotState[];
+  inventorySlots: InventorySlotState[];
   travel: TravelState | null;
   notification: string | null;
 };
@@ -62,10 +124,16 @@ export type GameState = {
 export type GameAction =
   | { type: 'mission/started' }
   | { type: 'mission/ticked' }
-  | { type: 'destination/selected'; destination: BodyName | '' }
+  | { type: 'destination/selected'; destination: LocationId | '' }
   | { type: 'travel/started' }
   | { type: 'travel/ticked' }
+  | { type: 'travel/paused' }
+  | { type: 'travel/resumed' }
+  | { type: 'travel/aborted' }
   | { type: 'equipment/slotUnlocked'; element: ElementKey }
   | { type: 'equipment/slotActivated'; element: ElementKey }
+  | { type: 'crafting/itemCrafted'; item: InventoryItemKey }
+  | { type: 'inventory/itemPressed'; item: InventoryItemKey }
+  | { type: 'arrivalDialog/cleared' }
   | { type: 'notification/cleared' }
   | { type: 'state/restored'; source: 'autosave' | 'import'; state: GameState };

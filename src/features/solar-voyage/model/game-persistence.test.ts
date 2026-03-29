@@ -51,6 +51,9 @@ describe('game persistence', () => {
     expect(migratedState.ship.fuel).toBe(100);
     expect(migratedState.ship.maxFuel).toBe(100);
     expect(migratedState.equipmentSlots).toHaveLength(14);
+    expect(migratedState.inventorySlots).toHaveLength(3);
+    expect(migratedState.inventorySlots[0]).toEqual({ count: 0, item: 'miningLaser' });
+    expect(migratedState.specialResources).toEqual({ diamonds: 0, plasma: 0, rawOre: 0 });
     expect(migratedState.equipmentSlots.find((slot) => slot.element === 'hydrogen')?.unlocked).toBe(
       true,
     );
@@ -78,7 +81,7 @@ describe('game persistence', () => {
     const restoredState = loadStoredGameState();
 
     expect(restoredState?.ship.fuel).toBe(100);
-    expect(localStorage.getItem(GAME_STATE_STORAGE_KEY)).toContain('"version": 2');
+    expect(localStorage.getItem(GAME_STATE_STORAGE_KEY)).toContain('"version": 4');
     expect(localStorage.getItem('space-travelor.game-state.v1')).toBeNull();
   });
 });
