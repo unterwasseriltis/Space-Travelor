@@ -29,6 +29,26 @@ import earthArrivalPortrait from '../../assets/arrival-portrait-erde.jpg';
 import venusArrivalPortrait from '../../assets/arrival-portrait-venus.jpg';
 import marsArrivalPortrait from '../../assets/arrival-portrait-mars.jpg';
 import phobosArrivalPortrait from '../../assets/arrival-portrait-phobos.jpg';
+import deimosArrivalPortrait from '../../assets/arrival-portrait-deimos.jpg';
+import merkurArrivalPortrait from '../../assets/arrival-portrait-merkur.jpg';
+import jupiterArrivalPortrait from '../../assets/arrival-portrait-jupiter.jpg';
+import amaltheaArrivalPortrait from '../../assets/arrival-portrait-amalthea.jpg';
+import ioArrivalPortrait from '../../assets/arrival-portrait-io.jpg';
+import europaArrivalPortrait from '../../assets/arrival-portrait-europa.jpg';
+import ganymedArrivalPortrait from '../../assets/arrival-portrait-ganymed.jpg';
+import kallistoArrivalPortrait from '../../assets/arrival-portrait-kallisto.jpg';
+import saturnArrivalPortrait from '../../assets/arrival-portrait-saturn.jpg';
+import tethysArrivalPortrait from '../../assets/arrival-portrait-tethys.jpg';
+import dioneArrivalPortrait from '../../assets/arrival-portrait-dione.jpg';
+import rheaArrivalPortrait from '../../assets/arrival-portrait-rhea.jpg';
+import titanArrivalPortrait from '../../assets/arrival-portrait-titan.jpg';
+import iapetusArrivalPortrait from '../../assets/arrival-portrait-iapetus.jpg';
+import uranusArrivalPortrait from '../../assets/arrival-portrait-uranus.jpg';
+import mirandaArrivalPortrait from '../../assets/arrival-portrait-miranda.jpg';
+import arielArrivalPortrait from '../../assets/arrival-portrait-ariel.jpg';
+import umbrielArrivalPortrait from '../../assets/arrival-portrait-umbriel.jpg';
+import titaniaArrivalPortrait from '../../assets/arrival-portrait-titania.jpg';
+import oberonArrivalPortrait from '../../assets/arrival-portrait-oberon.jpg';   
 
 import { celestialBodies, type BodyName } from '@/features/solar-voyage/domain/solar-system';
 
@@ -100,21 +120,27 @@ const bodyArrivalVisualOverrides: BodyArrivalVisualOverrides = {
     sceneSrc: phobosArrivalVista,
   },
   Deimos: {
+    portraitSrc: deimosArrivalPortrait,
     sceneSrc: deimosArrivalVista,
   },
   Merkur: {
+    portraitSrc: merkurArrivalPortrait,
     sceneSrc: merkurArrivalVista,
   },
   Jupiter: {
+    portraitSrc: jupiterArrivalPortrait,
     sceneSrc: jupiterArrivalVista,
   },
   Amalthea: {
+    portraitSrc: amaltheaArrivalPortrait,
     sceneSrc: amaltheaArrivalVista,
   },
   Io: {
+    portraitSrc: ioArrivalPortrait,
     sceneSrc: ioArrivalVista,
   },
   Europa: {
+    // portraitSrc: europaArrivalPortrait,
     sceneSrc: europaArrivalVista,
   },
   Ganymed: {
