@@ -7,10 +7,12 @@ type TransitHumOptions = {
 
 type TransitHumEngine = {
   context: AudioContext;
+  hum: GainNode;
   output: GainNode;
 };
 
 const ENGINE_HUM_GAIN = 0.035;
+const OUTPUT_GAIN = 1;
 const FADE_IN_SECONDS = 0.35;
 const FADE_OUT_SECONDS = 0.2;
 
@@ -34,7 +36,7 @@ export function useTransitHum({ isMuted, isPlaying }: TransitHumOptions) {
     const now = engine.context.currentTime;
     engine.output.gain.cancelScheduledValues(now);
     engine.output.gain.setValueAtTime(engine.output.gain.value, now);
-    engine.output.gain.linearRampToValueAtTime(ENGINE_HUM_GAIN, now + FADE_IN_SECONDS);
+    engine.output.gain.linearRampToValueAtTime(OUTPUT_GAIN, now + FADE_IN_SECONDS);
 
     void engine.context.resume().catch(() => undefined);
   }, [isMuted, isPlaying]);
@@ -68,7 +70,9 @@ function createTransitHumEngine(): TransitHumEngine | null {
   }
 
   const context = new AudioContextConstructor();
+  const hum = context.createGain();
   const output = context.createGain();
+  hum.gain.value = ENGINE_HUM_GAIN;
   output.gain.value = 0;
 
   const filter = context.createBiquadFilter();
@@ -99,14 +103,14 @@ function createTransitHumEngine(): TransitHumEngine | null {
 
   coreOscillator.connect(coreGain).connect(filter);
   overtoneOscillator.connect(overtoneGain).connect(filter);
-  flutterOscillator.connect(flutterGain).connect(output.gain);
-  filter.connect(output).connect(context.destination);
+  flutterOscillator.connect(flutterGain).connect(hum.gain);
+  filter.connect(hum).connect(output).connect(context.destination);
 
   coreOscillator.start();
   overtoneOscillator.start();
   flutterOscillator.start();
 
-  return { context, output };
+  return { context, hum, output };
 }
 
 function fadeOutHum(engine: TransitHumEngine | null) {
