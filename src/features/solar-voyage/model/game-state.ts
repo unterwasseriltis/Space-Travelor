@@ -5,7 +5,10 @@ import {
   INITIAL_FUEL,
   MAX_FUEL,
 } from '@/features/solar-voyage/model/equipment';
-import { createEmptyResourceState } from '@/features/solar-voyage/model/types';
+import {
+  createEmptyResourceState,
+  createEmptySpecialResourceState,
+} from '@/features/solar-voyage/model/types';
 import type { GameState, LocationId } from '@/features/solar-voyage/model/types';
 
 export function getInitialDestination(currentLocation: BodyName): LocationId {
@@ -21,6 +24,8 @@ export function createInitialGameState(): GameState {
     arrivalDialog: null,
     phase: 'menu',
     currentLocation: 'Erde',
+    currentCoordinatesOverride: null,
+    currentLocationLabelOverride: null,
     discoveredLocations: [],
     missionElapsedSeconds: 0,
     nextScannerDiscoveryId: 1,
@@ -32,6 +37,7 @@ export function createInitialGameState(): GameState {
       maxFuel: MAX_FUEL,
     },
     resources: createInitialResources(),
+    specialResources: createEmptySpecialResourceState(),
     equipmentSlots: createInitialEquipmentSlots(),
     inventorySlots: createInitialInventorySlots(),
     travel: null,

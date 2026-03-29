@@ -77,8 +77,11 @@ describe('gameReducer integration', () => {
         distanceKm: 100,
         earnedResources,
         origin: 'Erde' as const,
+        originCoordinates: { x: 1, y: 0 },
         remainingSeconds: 2,
+        status: 'active' as const,
         target: 'Mars' as const,
+        targetCoordinates: { x: 1.524, y: 0.85 },
         totalSeconds: 101,
       },
     };
@@ -222,8 +225,11 @@ describe('gameReducer integration', () => {
         distanceKm: 100,
         earnedResources: createInitialResources(),
         origin: 'Erde' as const,
+        originCoordinates: { x: 1, y: 0 },
         remainingSeconds: 3,
+        status: 'active' as const,
         target: 'Mars' as const,
+        targetCoordinates: { x: 1.524, y: 0.85 },
         totalSeconds: 3,
       },
     };
@@ -320,6 +326,11 @@ describe('gameReducer integration', () => {
   });
 
   it('uses the mining laser on a discovered site, gains resources, and removes the location', () => {
+    const randomSpy = vi
+      .spyOn(Math, 'random')
+      .mockReturnValueOnce(0.95)
+      .mockReturnValueOnce(0.5)
+      .mockReturnValueOnce(0.2);
     const initialState = createInitialGameState();
     const missionState = {
       ...initialState,
@@ -358,6 +369,40 @@ describe('gameReducer integration', () => {
     expect(nextState.inventorySlots[0].count).toBe(0);
     expect(nextState.resources.sodium).toBe(50);
     expect(nextState.resources.magnesium).toBe(40);
+    expect(nextState.specialResources.rawOre).toBeGreaterThan(0);
+    expect(nextState.specialResources.diamonds).toBeGreaterThan(0);
     expect(nextState.notification).toContain('depleted');
+    randomSpy.mockRestore();
+  });
+
+  it('can pause and abort a running trip while keeping the current coordinates', () => {
+    let state = createInitialGameState();
+
+    state = gameReducer(state, { type: 'mission/started' });
+    state = gameReducer(state, { type: 'destination/selected', destination: 'Mars' });
+    state = gameReducer(state, { type: 'travel/started' });
+
+    state = gameReducer(state, { type: 'travel/ticked' });
+    state = gameReducer(state, { type: 'travel/paused' });
+
+    expect(state.travel?.status).toBe('paused');
+
+    const pausedTravel = state.travel!;
+    const expectedX =
+      pausedTravel.originCoordinates.x * (1 - 1 / pausedTravel.totalSeconds) +
+      pausedTravel.targetCoordinates.x * (1 / pausedTravel.totalSeconds);
+    const expectedY =
+      pausedTravel.originCoordinates.y * (1 - 1 / pausedTravel.totalSeconds) +
+      pausedTravel.targetCoordinates.y * (1 / pausedTravel.totalSeconds);
+
+    state = gameReducer(state, { type: 'travel/aborted' });
+
+    expect(state.travel).toBeNull();
+    expect(state.currentCoordinatesOverride).toEqual({
+      x: expectedX,
+      y: expectedY,
+    });
+    expect(state.currentLocationLabelOverride).toBe('Deep Space Hold');
+    expect(state.notification).toContain('Travel aborted');
   });
 });

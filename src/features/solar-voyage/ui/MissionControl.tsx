@@ -15,12 +15,14 @@ import { formatFuelValue } from '@/features/solar-voyage/model/equipment';
 import type {
   ElementKey,
   EquipmentSlotState,
-  LocationId,
   InventoryItemKey,
   InventorySlotState,
+  LocationId,
   ResourceState,
   ShipState,
+  SpecialResourceState,
   TravelState,
+  TravelStatus,
 } from '@/features/solar-voyage/model/types';
 import {
   CargoPanel,
@@ -54,13 +56,18 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
     coordinatesLabel,
     currentLocationLabel,
     missionTimerLabel,
+    isTraveling,
     travelCountdownLabel,
     travelProgress,
+    travelStatus,
     currentPosition,
     mapLocations,
     startMission,
     selectDestination,
     startTravel,
+    pauseTravel,
+    resumeTravel,
+    abortTravel,
     activateEquipmentSlot,
     craftInventoryItem,
     pressInventoryItem,
@@ -185,8 +192,10 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       backgroundImage={backgroundImage}
       coordinatesLabel={coordinatesLabel}
       craftInventoryItem={craftInventoryItem}
-      currentLocation={state.currentLocation}
       currentLocationLabel={currentLocationLabel}
+      currentMapLocation={
+        state.travel || state.currentCoordinatesOverride ? null : state.currentLocation
+      }
       currentPosition={currentPosition}
       equipmentSlots={state.equipmentSlots}
       importInputRef={importInputRef}
@@ -197,16 +206,21 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       missionViewportLayout={missionViewportLayout}
       mapLocations={mapLocations}
       notification={state.notification}
+      isTraveling={isTraveling}
       onClearArrivalDialog={clearArrivalDialog}
       onExport={handleExport}
       onImport={handleImportButtonClick}
       onImportChange={handleImportChange}
       onInventoryItemClick={pressInventoryItem}
+      onPauseTravel={pauseTravel}
+      onResumeTravel={resumeTravel}
       onSelectDestination={selectDestination}
       onStartTravel={startTravel}
+      onAbortTravel={abortTravel}
       onToggleCrafting={() => setIsCraftingOpen((currentOpen) => !currentOpen)}
       onToggleSettings={() => setIsSettingsOpen((currentOpen) => !currentOpen)}
       resources={state.resources}
+      specialResources={state.specialResources}
       selectedDestination={state.selectedDestination}
       settingsMessage={settingsMessage}
       onCloseCrafting={() => setIsCraftingOpen(false)}
@@ -215,6 +229,7 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       travel={state.travel}
       travelCountdownLabel={travelCountdownLabel}
       travelProgress={travelProgress}
+      travelStatus={travelStatus}
     />
   );
 }
@@ -339,8 +354,8 @@ function MissionWorkspace({
   backgroundImage,
   coordinatesLabel,
   craftInventoryItem,
-  currentLocation,
   currentLocationLabel,
+  currentMapLocation,
   currentPosition,
   equipmentSlots,
   importInputRef,
@@ -351,16 +366,21 @@ function MissionWorkspace({
   missionViewportLayout,
   mapLocations,
   notification,
+  isTraveling,
   onClearArrivalDialog,
   onExport,
   onImport,
   onImportChange,
   onInventoryItemClick,
+  onPauseTravel,
+  onResumeTravel,
   onSelectDestination,
   onStartTravel,
+  onAbortTravel,
   onToggleCrafting,
   onToggleSettings,
   resources,
+  specialResources,
   selectedDestination,
   settingsMessage,
   onCloseCrafting,
@@ -369,6 +389,7 @@ function MissionWorkspace({
   travel,
   travelCountdownLabel,
   travelProgress,
+  travelStatus,
 }: {
   activateEquipmentSlot: (element: ElementKey) => void;
   arrivalDialogMessage: string | null;
@@ -376,8 +397,8 @@ function MissionWorkspace({
   backgroundImage: string;
   coordinatesLabel: string;
   craftInventoryItem: (item: InventoryItemKey) => void;
-  currentLocation: LocationId;
   currentLocationLabel: string;
+  currentMapLocation: LocationId | null;
   currentPosition: { x: number; y: number };
   equipmentSlots: EquipmentSlotState[];
   importInputRef: RefObject<HTMLInputElement | null>;
@@ -388,16 +409,21 @@ function MissionWorkspace({
   missionViewportLayout: MissionViewportLayout;
   mapLocations: MapLocation[];
   notification: string | null;
+  isTraveling: boolean;
   onClearArrivalDialog: () => void;
   onExport: () => Promise<void>;
   onImport: () => void;
   onImportChange: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
   onInventoryItemClick: (item: InventoryItemKey) => void;
+  onPauseTravel: () => void;
+  onResumeTravel: () => void;
   onSelectDestination: (destination: LocationId | '') => void;
   onStartTravel: () => void;
+  onAbortTravel: () => void;
   onToggleCrafting: () => void;
   onToggleSettings: () => void;
   resources: ResourceState;
+  specialResources: SpecialResourceState;
   selectedDestination: LocationId | '';
   settingsMessage: string | null;
   onCloseCrafting: () => void;
@@ -406,6 +432,7 @@ function MissionWorkspace({
   travel: TravelState | null;
   travelCountdownLabel: string | null;
   travelProgress: number;
+  travelStatus: TravelStatus | null;
 }) {
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-[#030611]">
@@ -465,7 +492,7 @@ function MissionWorkspace({
           <header className="grid shrink-0 grid-cols-[260px_minmax(0,1fr)] gap-5">
             <MapPanel
               className="h-full"
-              currentLocation={currentLocation}
+              currentLocation={currentMapLocation}
               currentPosition={currentPosition}
               locations={mapLocations}
             />
@@ -489,7 +516,7 @@ function MissionWorkspace({
                 <div className="flex items-center justify-end gap-2">
                   <Badge className="bg-accent/20 text-accent">Status</Badge>
                   <span className="text-lg font-medium text-slate-200">
-                    {travel ? 'In transit' : 'Docked'}
+                    {travel ? 'In transit' : currentMapLocation ? 'Docked' : 'Holding'}
                   </span>
                 </div>
               </div>
@@ -536,18 +563,26 @@ function MissionWorkspace({
                 className="h-full"
                 coordinatesLabel={coordinatesLabel}
                 destinations={availableDestinations}
-                isTraveling={Boolean(travel)}
+                isTraveling={isTraveling}
                 notification={notification}
+                onAbortTravel={onAbortTravel}
                 onDestinationChange={onSelectDestination}
+                onPauseTravel={onPauseTravel}
+                onResumeTravel={onResumeTravel}
                 onStartTravel={onStartTravel}
                 selectedDestination={selectedDestination}
                 travelCountdownLabel={travelCountdownLabel}
                 travelProgress={travelProgress}
+                travelStatus={travelStatus}
               />
             </section>
 
             <aside className="grid min-h-0 grid-rows-[minmax(0,1fr)_220px] gap-5">
-              <ResourcePanel className="min-h-0" resources={resources} />
+              <ResourcePanel
+                className="min-h-0"
+                resources={resources}
+                specialResources={specialResources}
+              />
               <CargoPanel
                 className="min-h-0"
                 compact

@@ -23,6 +23,7 @@ import type { ElementKey, InventoryItemKey, LocationId } from '@/features/solar-
 export function useSolarVoyage() {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);
   const isTraveling = Boolean(state.travel);
+  const isTravelActive = state.travel?.status === 'active';
   const hasSavedMission = state.phase === 'mission' || loadStoredGameState() !== null;
   const latestStateRef = useRef(state);
 
@@ -45,7 +46,7 @@ export function useSolarVoyage() {
   }, [state.phase]);
 
   useEffect(() => {
-    if (!isTraveling) {
+    if (!isTravelActive) {
       return undefined;
     }
 
@@ -56,7 +57,7 @@ export function useSolarVoyage() {
     return () => {
       window.clearInterval(timer);
     };
-  }, [isTraveling]);
+  }, [isTravelActive]);
 
   useEffect(() => {
     if (state.phase !== 'mission') {
@@ -113,14 +114,19 @@ export function useSolarVoyage() {
     coordinatesLabel: getCurrentCoordinatesLabel(state),
     currentLocationLabel: getCurrentLocationLabel(state),
     missionTimerLabel: getMissionTimerLabel(state),
+    isTraveling,
     travelCountdownLabel: getTravelCountdownLabel(state),
     travelProgress: getTravelProgress(state),
+    travelStatus: state.travel?.status ?? null,
     currentPosition: getCurrentPosition(state),
     mapLocations: getMapMarkers(state),
     startMission: () => dispatch({ type: 'mission/started' }),
     selectDestination: (destination: LocationId | '') =>
       dispatch({ type: 'destination/selected', destination }),
     startTravel: () => dispatch({ type: 'travel/started' }),
+    pauseTravel: () => dispatch({ type: 'travel/paused' }),
+    resumeTravel: () => dispatch({ type: 'travel/resumed' }),
+    abortTravel: () => dispatch({ type: 'travel/aborted' }),
     activateEquipmentSlot: (element: ElementKey) =>
       dispatch({ type: 'equipment/slotActivated', element }),
     craftInventoryItem: (item: InventoryItemKey) =>

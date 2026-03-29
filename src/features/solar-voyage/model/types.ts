@@ -33,6 +33,23 @@ export function createEmptyResourceState(): ResourceState {
   return resources;
 }
 
+export const SPECIAL_RESOURCES = {
+  rawOre: { label: 'Roherze', symbol: 'Ore' },
+  diamonds: { label: 'Diamanten', symbol: 'Dia' },
+  plasma: { label: 'Plasma', symbol: 'Pls' },
+} as const;
+
+export type SpecialResourceKey = keyof typeof SPECIAL_RESOURCES;
+export type SpecialResourceState = Record<SpecialResourceKey, number>;
+
+export function createEmptySpecialResourceState(): SpecialResourceState {
+  return {
+    diamonds: 0,
+    plasma: 0,
+    rawOre: 0,
+  };
+}
+
 export type EquipmentSlotState = {
   element: ElementKey;
   unlocked: boolean;
@@ -71,25 +88,33 @@ export type ShipState = {
   maxFuel: number;
 };
 
+export type TravelStatus = 'active' | 'paused';
+
 export type TravelState = {
   origin: LocationId;
+  originCoordinates: Coordinates;
   target: LocationId;
+  targetCoordinates: Coordinates;
   totalSeconds: number;
   remainingSeconds: number;
   distanceKm: number;
   earnedResources: ResourceState;
+  status: TravelStatus;
 };
 
 export type GameState = {
   phase: GamePhase;
   arrivalDialog: ArrivalDialogState;
   currentLocation: LocationId;
+  currentCoordinatesOverride: Coordinates | null;
+  currentLocationLabelOverride: string | null;
   discoveredLocations: ScannerDiscoveryState[];
   missionElapsedSeconds: number;
   nextScannerDiscoveryId: number;
   selectedDestination: LocationId | '';
   ship: ShipState;
   resources: ResourceState;
+  specialResources: SpecialResourceState;
   equipmentSlots: EquipmentSlotState[];
   inventorySlots: InventorySlotState[];
   travel: TravelState | null;
@@ -102,6 +127,9 @@ export type GameAction =
   | { type: 'destination/selected'; destination: LocationId | '' }
   | { type: 'travel/started' }
   | { type: 'travel/ticked' }
+  | { type: 'travel/paused' }
+  | { type: 'travel/resumed' }
+  | { type: 'travel/aborted' }
   | { type: 'equipment/slotUnlocked'; element: ElementKey }
   | { type: 'equipment/slotActivated'; element: ElementKey }
   | { type: 'crafting/itemCrafted'; item: InventoryItemKey }

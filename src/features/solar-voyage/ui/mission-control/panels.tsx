@@ -55,7 +55,7 @@ export function MapPanel({
   locations,
 }: {
   className?: string;
-  currentLocation: LocationId;
+  currentLocation: LocationId | null;
   currentPosition: { x: number; y: number };
   locations: MapLocation[];
 }) {
@@ -216,22 +216,30 @@ export function NavigationPanel({
   destinations,
   isTraveling,
   notification,
+  onAbortTravel,
   onDestinationChange,
+  onPauseTravel,
+  onResumeTravel,
   onStartTravel,
   selectedDestination,
   travelCountdownLabel,
   travelProgress,
+  travelStatus,
 }: {
   className?: string;
   coordinatesLabel: string;
   destinations: LocationOption[];
   isTraveling: boolean;
   notification: string | null;
+  onAbortTravel: () => void;
   onDestinationChange: (destination: LocationId | '') => void;
+  onPauseTravel: () => void;
+  onResumeTravel: () => void;
   onStartTravel: () => void;
   selectedDestination: LocationId | '';
   travelCountdownLabel: string | null;
   travelProgress: number;
+  travelStatus: 'active' | 'paused' | null;
 }) {
   return (
     <div
@@ -287,13 +295,31 @@ export function NavigationPanel({
         {isTraveling ? (
           <div className="border-primary/20 bg-primary/10 rounded-2xl border p-4">
             <div className="text-primary mb-3 flex items-center justify-between text-sm tracking-[0.18em] uppercase">
-              <span>Transit Countdown</span>
+              <span>{travelStatus === 'paused' ? 'Transit Paused' : 'Transit Countdown'}</span>
               <span>{travelCountdownLabel}</span>
             </div>
             <Progress
               className="[&_[data-slot=progress-indicator]]:bg-primary h-3 bg-white/8"
               value={travelProgress * 100}
             />
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <Button
+                className="h-10 tracking-[0.14em] uppercase"
+                onClick={travelStatus === 'paused' ? onResumeTravel : onPauseTravel}
+                type="button"
+                variant="secondary"
+              >
+                {travelStatus === 'paused' ? 'Resume' : 'Pause'}
+              </Button>
+              <Button
+                className="h-10 tracking-[0.14em] uppercase"
+                onClick={onAbortTravel}
+                type="button"
+                variant="outline"
+              >
+                Abort
+              </Button>
+            </div>
           </div>
         ) : null}
 
@@ -313,35 +339,105 @@ export function NavigationPanel({
 export function ResourcePanel({
   className,
   resources,
+  specialResources,
 }: {
   className?: string;
   resources: Record<ElementKey, number>;
+  specialResources: { diamonds: number; plasma: number; rawOre: number };
 }) {
+  const [activeTab, setActiveTab] = useState<'elements' | 'special'>('elements');
+
   return (
     <Card size="sm" className={cn('glass-panel hud-outline h-full min-h-0', className)}>
       <CardHeader>
-        <CardTitle className="font-[family-name:var(--font-display)] text-xl tracking-[0.18em] uppercase">
-          Resources
-        </CardTitle>
-        <CardDescription>Collected mission materials. 14 elements tracked.</CardDescription>
-      </CardHeader>
-      <CardContent className="grid min-h-0 grow auto-rows-[80px] grid-cols-3 content-start gap-2 overflow-y-auto pr-1">
-        {Object.entries(ELEMENTS).map(([key, element]) => (
-          <div
-            key={key}
-            className="border-border bg-muted/30 hover:bg-muted/50 flex h-full min-h-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border px-2 py-2 text-center transition-colors"
-          >
-            <p className="text-accent text-[11px] leading-none font-bold">{element.symbol}</p>
-            <p className="text-xl leading-none font-black text-white tabular-nums">
-              {resources[key as ElementKey]}
-            </p>
-            <p className="w-full truncate text-[8px] leading-none tracking-[0.1em] text-slate-400 uppercase">
-              {element.name}
-            </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className="font-[family-name:var(--font-display)] text-xl tracking-[0.18em] uppercase">
+              Resources
+            </CardTitle>
+            <CardDescription>Elements, special finds, and later mission materials.</CardDescription>
           </div>
-        ))}
-      </CardContent>
+          <div className="bg-muted/40 flex rounded-xl p-1">
+            <Button
+              aria-label="Show element resources"
+              className="h-8 px-3 text-[10px] tracking-[0.14em] uppercase"
+              onClick={() => setActiveTab('elements')}
+              type="button"
+              variant={activeTab === 'elements' ? 'secondary' : 'ghost'}
+            >
+              Elements
+            </Button>
+            <Button
+              aria-label="Show special resources"
+              className="h-8 px-3 text-[10px] tracking-[0.14em] uppercase"
+              onClick={() => setActiveTab('special')}
+              type="button"
+              variant={activeTab === 'special' ? 'secondary' : 'ghost'}
+            >
+              Special
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      {activeTab === 'elements' ? (
+        <CardContent className="grid min-h-0 grow auto-rows-[80px] grid-cols-3 content-start gap-2 overflow-y-auto pr-1">
+          {Object.entries(ELEMENTS).map(([key, element]) => (
+            <div
+              key={key}
+              className="border-border bg-muted/30 hover:bg-muted/50 flex h-full min-h-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border px-2 py-2 text-center transition-colors"
+            >
+              <p className="text-accent text-[11px] leading-none font-bold">{element.symbol}</p>
+              <p className="text-xl leading-none font-black text-white tabular-nums">
+                {resources[key as ElementKey]}
+              </p>
+              <p className="w-full truncate text-[8px] leading-none tracking-[0.1em] text-slate-400 uppercase">
+                {element.name}
+              </p>
+            </div>
+          ))}
+        </CardContent>
+      ) : (
+        <CardContent className="grid min-h-0 grow auto-rows-[112px] grid-cols-1 content-start gap-3 overflow-y-auto pr-1">
+          <SpecialResourceCard
+            description="Mit Mining Lasern aus Asteroiden und Erzvorkommen bergbar."
+            label="Roherze"
+            value={specialResources.rawOre}
+          />
+          <SpecialResourceCard
+            description="Seltener Fund beim Abbau mit dem Mining Laser."
+            label="Diamanten"
+            value={specialResources.diamonds}
+          />
+          <SpecialResourceCard
+            description="Startet bei 0 und wird spaeter ueber andere Methoden gewonnen."
+            label="Plasma"
+            value={specialResources.plasma}
+          />
+        </CardContent>
+      )}
     </Card>
+  );
+}
+
+function SpecialResourceCard({
+  description,
+  label,
+  value,
+}: {
+  description: string;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="border-border bg-muted/30 flex flex-col justify-between rounded-2xl border p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold tracking-[0.14em] text-white uppercase">{label}</p>
+          <p className="mt-2 text-[11px] leading-5 text-slate-400">{description}</p>
+        </div>
+        <p className="text-primary text-3xl leading-none font-black tabular-nums">{value}</p>
+      </div>
+    </div>
   );
 }
 

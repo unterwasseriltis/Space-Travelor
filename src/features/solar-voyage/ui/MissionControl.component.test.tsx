@@ -37,6 +37,8 @@ describe('MissionControl component', () => {
 
     expect(screen.getByText(/transit countdown/i)).toBeInTheDocument();
     expect(screen.getByText('1:00')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /pause/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /abort/i })).toBeInTheDocument();
   });
 
   it('keeps the ship centered while minimap zoom changes', async () => {
@@ -163,6 +165,19 @@ describe('MissionControl component', () => {
     expect(screen.getByText(/shield booster used/i)).toBeInTheDocument();
   });
 
+  it('switches the resource panel to special resources', async () => {
+    const user = userEvent.setup();
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    await user.click(screen.getByRole('button', { name: /new mission/i }));
+    await user.click(screen.getByRole('button', { name: /show special resources/i }));
+
+    expect(screen.getByText(/roherze/i)).toBeInTheDocument();
+    expect(screen.getByText(/diamanten/i)).toBeInTheDocument();
+    expect(screen.getByText(/plasma/i)).toBeInTheDocument();
+  });
+
   it('exports the current mission snapshot from the settings dialog', async () => {
     const user = userEvent.setup();
     const clipboardWriteText = vi.fn().mockResolvedValue(undefined);
@@ -262,5 +277,27 @@ describe('MissionControl component', () => {
     fireEvent.click(screen.getByRole('button', { name: /^ok\.$/i }));
 
     expect(screen.queryByText(/willkommen auf dem mond\./i)).not.toBeInTheDocument();
+  });
+
+  it('can abort a trip and keeps the ship at its current coordinates', () => {
+    vi.useFakeTimers();
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /new mission/i }));
+    fireEvent.click(screen.getByRole('button', { name: /accelerate/i }));
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    const coordinatesBeforeAbort = screen.getByText(/x:/i).textContent;
+
+    fireEvent.click(screen.getByRole('button', { name: /abort/i }));
+
+    expect(screen.getByText(/deep space hold/i)).toBeInTheDocument();
+    expect(screen.queryByText(/transit countdown/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/travel aborted/i)).toBeInTheDocument();
+    expect(screen.getByText(coordinatesBeforeAbort ?? '')).toBeInTheDocument();
   });
 });

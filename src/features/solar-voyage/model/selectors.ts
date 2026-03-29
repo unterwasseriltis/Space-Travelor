@@ -16,6 +16,10 @@ export function getAvailableDestinations(state: GameState) {
 }
 
 export function getCurrentLocationLabel(state: GameState) {
+  if (state.currentLocationLabelOverride) {
+    return state.currentLocationLabelOverride;
+  }
+
   return getLocationLabel(state, state.currentLocation);
 }
 
@@ -25,13 +29,13 @@ export function getMapMarkers(state: GameState) {
 
 export function getCurrentPosition(state: GameState) {
   if (!state.travel) {
-    return getLocationCoordinates(state, state.currentLocation);
+    return state.currentCoordinatesOverride ?? getLocationCoordinates(state, state.currentLocation);
   }
 
   const progress = getTravelProgress(state);
   return interpolateCoordinates(
-    getLocationCoordinates(state, state.travel.origin),
-    getLocationCoordinates(state, state.travel.target),
+    state.travel.originCoordinates,
+    state.travel.targetCoordinates,
     progress,
   );
 }

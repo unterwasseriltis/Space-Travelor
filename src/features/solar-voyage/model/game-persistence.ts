@@ -1,5 +1,5 @@
 import { celestialBodies } from '@/features/solar-voyage/domain/solar-system';
-import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
+import type { BodyName, Coordinates } from '@/features/solar-voyage/domain/solar-system';
 import {
   CRAFTING_RECIPES,
   createInitialInventorySlots,
@@ -12,6 +12,7 @@ import {
   syncEquipmentSlotsWithResources,
 } from '@/features/solar-voyage/model/equipment';
 import { isScannerDiscoveryId } from '@/features/solar-voyage/model/locations';
+import { getLocationCoordinates } from '@/features/solar-voyage/model/locations';
 import { ELEMENTS } from '@/features/solar-voyage/model/types';
 import type {
   ArrivalDialogState,
@@ -26,12 +27,13 @@ import type {
   ScannerDiscoveryId,
   ScannerDiscoveryState,
   ShipState,
+  SpecialResourceState,
   TravelState,
 } from '@/features/solar-voyage/model/types';
 
 const LEGACY_GAME_STATE_STORAGE_KEY = 'space-travelor.game-state.v1';
 export const GAME_STATE_STORAGE_KEY = 'space-travelor.game-state.v2';
-const GAME_STATE_SNAPSHOT_VERSION = 3;
+const GAME_STATE_SNAPSHOT_VERSION = 4;
 
 type GameStateSnapshot = {
   version: typeof GAME_STATE_SNAPSHOT_VERSION;
@@ -118,6 +120,7 @@ function validateGameStateSnapshot(snapshot: unknown): GameState {
   if ('version' in snapshotRecord) {
     if (
       snapshotRecord.version !== GAME_STATE_SNAPSHOT_VERSION &&
+      snapshotRecord.version !== 3 &&
       snapshotRecord.version !== 2 &&
       snapshotRecord.version !== 1
     ) {
@@ -147,13 +150,22 @@ function validateGameState(gameState: unknown): GameState {
     knownLocationIds,
     'Current location is invalid.',
   );
+  const currentCoordinatesOverride = validateOptionalCoordinates(
+    stateRecord.currentCoordinatesOverride,
+    'Current coordinates override is invalid.',
+  );
+  const currentLocationLabelOverride = validateNullableString(
+    stateRecord.currentLocationLabelOverride,
+    'Current location label override is invalid.',
+  );
   const selectedDestination = validateSelectedDestination(
     stateRecord.selectedDestination,
     knownLocationIds,
   );
-  const travel = validateTravelState(stateRecord.travel, knownLocationIds);
+  const travel = validateTravelState(stateRecord.travel, knownLocationIds, discoveredLocations);
   const notification = validateNotification(stateRecord.notification);
   const arrivalDialog = validateArrivalDialog(stateRecord.arrivalDialog);
+  const specialResources = validateSpecialResourceState(stateRecord.specialResources);
   const nextScannerDiscoveryId = validateNextScannerDiscoveryId(
     stateRecord.nextScannerDiscoveryId,
     discoveredLocations,
@@ -166,6 +178,8 @@ function validateGameState(gameState: unknown): GameState {
   return {
     arrivalDialog,
     currentLocation,
+    currentCoordinatesOverride,
+    currentLocationLabelOverride,
     discoveredLocations,
     equipmentSlots,
     inventorySlots,
@@ -176,6 +190,7 @@ function validateGameState(gameState: unknown): GameState {
     resources,
     selectedDestination,
     ship,
+    specialResources,
     travel,
   };
 }
@@ -213,9 +228,28 @@ function validateResourceState(value: unknown, errorMessage: string): ResourceSt
   return resources;
 }
 
+function validateSpecialResourceState(value: unknown): SpecialResourceState {
+  if (value === undefined) {
+    return {
+      diamonds: 0,
+      plasma: 0,
+      rawOre: 0,
+    };
+  }
+
+  const resourceRecord = getRecord(value, 'Special resources are invalid.');
+
+  return {
+    diamonds: validateWholeNumber(resourceRecord.diamonds, 'Diamonds are invalid.'),
+    plasma: validateWholeNumber(resourceRecord.plasma, 'Plasma is invalid.'),
+    rawOre: validateWholeNumber(resourceRecord.rawOre, 'Raw ore is invalid.'),
+  };
+}
+
 function validateTravelState(
   value: unknown,
   knownLocationIds: Set<LocationId>,
+  discoveredLocations: ScannerDiscoveryState[],
 ): TravelState | null {
   if (value === null || value === undefined) {
     return null;
@@ -237,10 +271,24 @@ function validateTravelState(
 
   return {
     origin: validateLocationId(travelRecord.origin, knownLocationIds, 'Travel origin is invalid.'),
+    originCoordinates: validateTravelCoordinates(
+      travelRecord.originCoordinates,
+      travelRecord.origin,
+      knownLocationIds,
+      discoveredLocations,
+      'Travel origin coordinates are invalid.',
+    ),
     target: validateLocationId(
       travelRecord.target,
       knownLocationIds,
       'Travel destination is invalid.',
+    ),
+    targetCoordinates: validateTravelCoordinates(
+      travelRecord.targetCoordinates,
+      travelRecord.target,
+      knownLocationIds,
+      discoveredLocations,
+      'Travel target coordinates are invalid.',
     ),
     totalSeconds,
     remainingSeconds,
@@ -249,6 +297,7 @@ function validateTravelState(
       travelRecord.earnedResources,
       'Earned travel resources are invalid.',
     ),
+    status: validateTravelStatus(travelRecord.status),
   };
 }
 
@@ -415,6 +464,18 @@ function validateArrivalDialog(value: unknown): ArrivalDialogState {
   };
 }
 
+function validateTravelStatus(value: unknown): TravelState['status'] {
+  if (value === undefined) {
+    return 'active';
+  }
+
+  if (value === 'active' || value === 'paused') {
+    return value;
+  }
+
+  throw new Error('Travel status is invalid.');
+}
+
 function validateNextScannerDiscoveryId(
   value: unknown,
   discoveredLocations: ScannerDiscoveryState[],
@@ -517,6 +578,43 @@ function validateString(value: unknown, errorMessage: string) {
   }
 
   throw new Error(errorMessage);
+}
+
+function validateNullableString(value: unknown, errorMessage: string) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  return validateString(value, errorMessage);
+}
+
+function validateOptionalCoordinates(value: unknown, errorMessage: string): Coordinates | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const coordinateRecord = getRecord(value, errorMessage);
+
+  return {
+    x: validateSignedNumber(coordinateRecord.x, errorMessage),
+    y: validateSignedNumber(coordinateRecord.y, errorMessage),
+  };
+}
+
+function validateTravelCoordinates(
+  value: unknown,
+  locationValue: unknown,
+  knownLocationIds: Set<LocationId>,
+  discoveredLocations: ScannerDiscoveryState[],
+  errorMessage: string,
+): Coordinates {
+  const fallbackLocationId = validateLocationId(locationValue, knownLocationIds, errorMessage);
+  const fallbackState = { discoveredLocations };
+
+  return (
+    validateOptionalCoordinates(value, errorMessage) ??
+    getLocationCoordinates(fallbackState, fallbackLocationId)
+  );
 }
 
 function validateNonNegativeNumber(value: unknown, fallbackValue: number) {
