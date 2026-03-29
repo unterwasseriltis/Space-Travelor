@@ -6,6 +6,7 @@ import {
 import {
   getAvailableDestinations,
   getCurrentCoordinatesLabel,
+  getCurrentLocationLabel,
   getCurrentPosition,
   getMissionTimerLabel,
   getTravelCountdownLabel,
@@ -15,15 +16,12 @@ import type { GameState } from '@/features/solar-voyage/model/types';
 
 describe('selectors', () => {
   it('lists destinations except the current location', () => {
-    expect(getAvailableDestinations('Erde')).toEqual([
-      'Mond',
-      'Venus',
-      'Mars',
-      'Merkur',
-      'Jupiter',
-      'Saturn',
-      'Uranus',
-    ]);
+    const destinations = getAvailableDestinations(createInitialGameState());
+
+    expect(destinations.map((destination) => destination.label)).toContain('Mond');
+    expect(destinations.map((destination) => destination.label)).toContain('Phobos');
+    expect(destinations.map((destination) => destination.label)).toContain('Ganymed');
+    expect(destinations.map((destination) => destination.label)).not.toContain('Erde');
   });
 
   it('returns the docked body coordinates when not traveling', () => {
@@ -31,6 +29,7 @@ describe('selectors', () => {
 
     expect(getCurrentPosition(state)).toEqual(celestialBodies.Erde);
     expect(getCurrentCoordinatesLabel(state)).toBe('X: 1.000 AU | Y: 0.000 AU');
+    expect(getCurrentLocationLabel(state)).toBe('Erde');
   });
 
   it('interpolates position and labels while traveling', () => {

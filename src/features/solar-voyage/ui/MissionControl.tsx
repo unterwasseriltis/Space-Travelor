@@ -9,12 +9,13 @@ import {
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
 import { useSolarVoyage } from '@/features/solar-voyage/hooks/use-solar-voyage';
+import type { LocationOption, MapLocation } from '@/features/solar-voyage/model/locations';
 import { formatFuelValue } from '@/features/solar-voyage/model/equipment';
 import type {
   ElementKey,
   EquipmentSlotState,
+  LocationId,
   InventoryItemKey,
   InventorySlotState,
   ResourceState,
@@ -31,6 +32,7 @@ import {
   StatusBar,
 } from '@/features/solar-voyage/ui/mission-control/panels';
 import {
+  ArrivalDialog,
   CraftingDialog,
   SettingsButton,
   SettingsDialog,
@@ -50,16 +52,19 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
     hasSavedMission,
     availableDestinations,
     coordinatesLabel,
+    currentLocationLabel,
     missionTimerLabel,
     travelCountdownLabel,
     travelProgress,
     currentPosition,
+    mapLocations,
     startMission,
     selectDestination,
     startTravel,
     activateEquipmentSlot,
     craftInventoryItem,
     pressInventoryItem,
+    clearArrivalDialog,
     clearNotification,
     exportSnapshot,
     importSnapshot,
@@ -175,11 +180,13 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
   ) : (
     <MissionWorkspace
       activateEquipmentSlot={activateEquipmentSlot}
+      arrivalDialogMessage={state.arrivalDialog?.message ?? null}
       availableDestinations={availableDestinations}
       backgroundImage={backgroundImage}
       coordinatesLabel={coordinatesLabel}
       craftInventoryItem={craftInventoryItem}
       currentLocation={state.currentLocation}
+      currentLocationLabel={currentLocationLabel}
       currentPosition={currentPosition}
       equipmentSlots={state.equipmentSlots}
       importInputRef={importInputRef}
@@ -188,7 +195,9 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       isSettingsOpen={isSettingsOpen}
       missionTimerLabel={missionTimerLabel}
       missionViewportLayout={missionViewportLayout}
+      mapLocations={mapLocations}
       notification={state.notification}
+      onClearArrivalDialog={clearArrivalDialog}
       onExport={handleExport}
       onImport={handleImportButtonClick}
       onImportChange={handleImportChange}
@@ -325,11 +334,13 @@ function LaunchMenu({
 
 function MissionWorkspace({
   activateEquipmentSlot,
+  arrivalDialogMessage,
   availableDestinations,
   backgroundImage,
   coordinatesLabel,
   craftInventoryItem,
   currentLocation,
+  currentLocationLabel,
   currentPosition,
   equipmentSlots,
   importInputRef,
@@ -338,7 +349,9 @@ function MissionWorkspace({
   isSettingsOpen,
   missionTimerLabel,
   missionViewportLayout,
+  mapLocations,
   notification,
+  onClearArrivalDialog,
   onExport,
   onImport,
   onImportChange,
@@ -358,11 +371,13 @@ function MissionWorkspace({
   travelProgress,
 }: {
   activateEquipmentSlot: (element: ElementKey) => void;
-  availableDestinations: BodyName[];
+  arrivalDialogMessage: string | null;
+  availableDestinations: LocationOption[];
   backgroundImage: string;
   coordinatesLabel: string;
   craftInventoryItem: (item: InventoryItemKey) => void;
-  currentLocation: BodyName;
+  currentLocation: LocationId;
+  currentLocationLabel: string;
   currentPosition: { x: number; y: number };
   equipmentSlots: EquipmentSlotState[];
   importInputRef: RefObject<HTMLInputElement | null>;
@@ -371,17 +386,19 @@ function MissionWorkspace({
   isSettingsOpen: boolean;
   missionTimerLabel: string;
   missionViewportLayout: MissionViewportLayout;
+  mapLocations: MapLocation[];
   notification: string | null;
+  onClearArrivalDialog: () => void;
   onExport: () => Promise<void>;
   onImport: () => void;
   onImportChange: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
   onInventoryItemClick: (item: InventoryItemKey) => void;
-  onSelectDestination: (destination: BodyName | '') => void;
+  onSelectDestination: (destination: LocationId | '') => void;
   onStartTravel: () => void;
   onToggleCrafting: () => void;
   onToggleSettings: () => void;
   resources: ResourceState;
-  selectedDestination: BodyName | '';
+  selectedDestination: LocationId | '';
   settingsMessage: string | null;
   onCloseCrafting: () => void;
   onCloseSettings: () => void;
@@ -412,6 +429,11 @@ function MissionWorkspace({
         Export a live snapshot of the current mission or import a JSON save file. Autosave keeps
         local storage in sync every 5 seconds.
       </SettingsDialog>
+      <ArrivalDialog
+        isOpen={Boolean(arrivalDialogMessage)}
+        message={arrivalDialogMessage}
+        onConfirm={onClearArrivalDialog}
+      />
       <CraftingDialog
         inventorySlots={inventorySlots}
         isOpen={isCraftingOpen}
@@ -445,13 +467,14 @@ function MissionWorkspace({
               className="h-full"
               currentLocation={currentLocation}
               currentPosition={currentPosition}
+              locations={mapLocations}
             />
 
             <div className="flex min-h-[210px] flex-col gap-5">
               <div className="glass-panel hud-outline grid flex-1 grid-cols-[1fr_auto_1fr] items-center rounded-[2rem] px-8 py-5">
                 <div className="flex items-center gap-3">
                   <Badge className="bg-primary/15 text-primary">Standort</Badge>
-                  <span className="text-2xl font-semibold text-white">{currentLocation}</span>
+                  <span className="text-2xl font-semibold text-white">{currentLocationLabel}</span>
                 </div>
 
                 <div className="text-center">

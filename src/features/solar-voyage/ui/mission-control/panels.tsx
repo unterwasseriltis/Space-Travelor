@@ -14,19 +14,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
-import { celestialBodies } from '@/features/solar-voyage/domain/solar-system';
 import { getInventoryItemLabel } from '@/features/solar-voyage/model/crafting';
 import {
   ELEMENT_SLOT_CONFIG,
   formatEquipmentEffect,
 } from '@/features/solar-voyage/model/equipment';
+import type { LocationOption, MapLocation } from '@/features/solar-voyage/model/locations';
 import { ELEMENTS } from '@/features/solar-voyage/model/types';
 import type {
   ElementKey,
   EquipmentSlotState,
   InventoryItemKey,
   InventorySlotState,
+  LocationId,
 } from '@/features/solar-voyage/model/types';
 import { cn } from '@/lib/utils';
 
@@ -52,10 +52,12 @@ export function MapPanel({
   className,
   currentLocation,
   currentPosition,
+  locations,
 }: {
   className?: string;
-  currentLocation: BodyName;
+  currentLocation: LocationId;
   currentPosition: { x: number; y: number };
+  locations: MapLocation[];
 }) {
   const [zoom, setZoom] = useState(MINIMAP_DEFAULT_ZOOM);
   const zoomLabel = `${Math.round(zoom * 100)}%`;
@@ -94,22 +96,23 @@ export function MapPanel({
           className="absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-300 shadow-[0_0_20px_rgba(255,209,102,0.65)]"
           style={getMinimapMarkerStyle({ x: 0, y: 0 }, currentPosition, zoom)}
         />
-        {Object.entries(celestialBodies).map(([name, body]) => (
+        {locations.map((location) => (
           <div
-            key={name}
+            key={location.id}
             className="absolute"
-            data-testid={`minimap-body-${name}`}
-            style={getMinimapMarkerStyle(body, currentPosition, zoom)}
+            data-testid={`minimap-body-${location.label}`}
+            style={getMinimapMarkerStyle(location, currentPosition, zoom)}
           >
             <div
               className={cn(
                 'size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20',
-                name === currentLocation && 'ring-primary/40 ring-2',
+                location.isScannerDiscovery && 'size-2.5 shadow-[0_0_18px_rgba(245,158,11,0.5)]',
+                location.id === currentLocation && 'ring-primary/40 ring-2',
               )}
-              style={{ backgroundColor: body.color }}
+              style={{ backgroundColor: location.color }}
             />
             <span className="mt-1 block -translate-x-1/2 text-center text-[8px] tracking-[0.1em] text-slate-300 uppercase">
-              {name}
+              {location.label}
             </span>
           </div>
         ))}
@@ -221,12 +224,12 @@ export function NavigationPanel({
 }: {
   className?: string;
   coordinatesLabel: string;
-  destinations: BodyName[];
+  destinations: LocationOption[];
   isTraveling: boolean;
   notification: string | null;
-  onDestinationChange: (destination: BodyName | '') => void;
+  onDestinationChange: (destination: LocationId | '') => void;
   onStartTravel: () => void;
-  selectedDestination: BodyName | '';
+  selectedDestination: LocationId | '';
   travelCountdownLabel: string | null;
   travelProgress: number;
 }) {
@@ -255,17 +258,17 @@ export function NavigationPanel({
           <p className="text-xs tracking-[0.28em] text-slate-400 uppercase">Destination</p>
           <Select
             disabled={isTraveling}
-            onValueChange={(value) => onDestinationChange(value as BodyName)}
+            onValueChange={(value) => onDestinationChange(value as LocationId)}
             value={selectedDestination}
           >
             <SelectTrigger className="bg-secondary/65 h-12 w-full">
               <SelectValue placeholder="Choose a destination" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-72" position="popper">
               <SelectGroup>
                 {destinations.map((destination) => (
-                  <SelectItem key={destination} value={destination}>
-                    {destination}
+                  <SelectItem key={destination.id} value={destination.id}>
+                    {destination.label}
                   </SelectItem>
                 ))}
               </SelectGroup>
@@ -454,40 +457,46 @@ export function CargoPanel({
             {title}
           </h3>
           <p className="text-xs text-slate-400">
-            Crafted modules are stored in fixed inventory slots.
+            Drei feste Slots. Crafting erhoeht den Bestand, Einsatz verbraucht je 1 Ladung.
           </p>
         </div>
         <CraftingButton onClick={onOpenCrafting} />
       </div>
       <div className={cn('grid grid-cols-3 gap-3', compact && 'min-h-0 flex-1 auto-rows-fr gap-2')}>
-        {inventorySlots.map((item, index) => (
-          <div
-            key={`inventory-slot-${index + 1}`}
-            className={cn(
-              'border-primary/25 flex items-center justify-center rounded-2xl border border-dashed bg-white/5 px-3 text-center font-medium tracking-[0.12em] text-slate-200 uppercase',
-              compact ? 'min-h-0 text-[9px]' : 'aspect-square text-[10px]',
-            )}
-          >
-            {item ? (
+        {inventorySlots.map((slot, index) => {
+          const itemLabel = getInventoryItemLabel(slot.item);
+          const canUse = slot.count > 0;
+
+          return (
+            <div
+              key={`inventory-slot-${index + 1}`}
+              className={cn(
+                'border-primary/25 flex items-center justify-center rounded-2xl border border-dashed bg-white/5 px-3 text-center font-medium tracking-[0.12em] text-slate-200 uppercase',
+                compact ? 'min-h-0 text-[9px]' : 'aspect-square text-[10px]',
+              )}
+            >
               <Button
-                aria-label={`${getInventoryItemLabel(item)} inventory item`}
-                className="h-full w-full rounded-[0.9rem] px-2 text-[9px] tracking-[0.12em] uppercase"
-                onClick={() => onInventoryItemClick(item)}
+                aria-label={`${itemLabel} inventory item`}
+                className={cn(
+                  'h-full w-full rounded-[0.9rem] px-2 text-[9px] tracking-[0.12em] uppercase',
+                  !canUse && 'cursor-default opacity-70',
+                )}
+                disabled={!canUse}
+                onClick={() => onInventoryItemClick(slot.item)}
                 type="button"
-                variant="secondary"
+                variant={canUse ? 'secondary' : 'outline'}
               >
-                {getInventoryItemLabel(item)}
+                <div className="flex flex-col items-center gap-1 text-center">
+                  <span className="text-primary/70 text-[8px] tracking-[0.18em]">
+                    Slot {index + 1}
+                  </span>
+                  <span>{itemLabel}</span>
+                  <span className="text-[8px] text-slate-300">x{slot.count}</span>
+                </div>
               </Button>
-            ) : (
-              <div className="flex flex-col items-center gap-1 text-center">
-                <span className="text-primary/70 text-[8px] tracking-[0.18em]">
-                  Slot {index + 1}
-                </span>
-                <span>Empty</span>
-              </div>
-            )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

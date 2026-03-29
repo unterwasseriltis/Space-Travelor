@@ -1,26 +1,37 @@
 import {
-  celestialBodies,
   formatCoordinates,
   interpolateCoordinates,
 } from '@/features/solar-voyage/domain/solar-system';
 import { formatCountdown, formatDuration } from '@/features/solar-voyage/domain/travel';
+import {
+  getAvailableDestinationOptions,
+  getLocationCoordinates,
+  getLocationLabel,
+  getMapLocations,
+} from '@/features/solar-voyage/model/locations';
 import type { GameState } from '@/features/solar-voyage/model/types';
 
-export function getAvailableDestinations(currentLocation: GameState['currentLocation']) {
-  return Object.keys(celestialBodies).filter(
-    (body) => body !== currentLocation,
-  ) as GameState['currentLocation'][];
+export function getAvailableDestinations(state: GameState) {
+  return getAvailableDestinationOptions(state);
+}
+
+export function getCurrentLocationLabel(state: GameState) {
+  return getLocationLabel(state, state.currentLocation);
+}
+
+export function getMapMarkers(state: GameState) {
+  return getMapLocations(state);
 }
 
 export function getCurrentPosition(state: GameState) {
   if (!state.travel) {
-    return celestialBodies[state.currentLocation];
+    return getLocationCoordinates(state, state.currentLocation);
   }
 
   const progress = getTravelProgress(state);
   return interpolateCoordinates(
-    celestialBodies[state.travel.origin],
-    celestialBodies[state.travel.target],
+    getLocationCoordinates(state, state.travel.origin),
+    getLocationCoordinates(state, state.travel.target),
     progress,
   );
 }

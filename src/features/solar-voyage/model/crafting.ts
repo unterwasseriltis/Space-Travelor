@@ -5,7 +5,7 @@ import type {
   ResourceState,
 } from '@/features/solar-voyage/model/types';
 
-export const INVENTORY_SLOT_COUNT = 9;
+export const INVENTORY_SLOT_COUNT = 3;
 
 export type CraftingIngredient = {
   amount: number;
@@ -22,7 +22,7 @@ export type CraftingRecipe = {
 
 export const CRAFTING_RECIPES: CraftingRecipe[] = [
   {
-    description: 'Assembles a mining laser placeholder for the first inventory slot.',
+    description: 'Baut einen Mining Laser fuer Slot 1 und erhoeht dessen Bestand um 1.',
     ingredients: [
       { amount: 100, element: 'sodium' },
       { amount: 100, element: 'magnesium' },
@@ -33,7 +33,7 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
     slotIndex: 0,
   },
   {
-    description: 'Builds a shield booster placeholder for the second inventory slot.',
+    description: 'Baut einen Shield Booster fuer Slot 2 und erhoeht dessen Bestand um 1.',
     ingredients: [
       { amount: 100, element: 'oxygen' },
       { amount: 100, element: 'silicon' },
@@ -44,14 +44,14 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
     slotIndex: 1,
   },
   {
-    description: 'Builds a scanner module placeholder for the third inventory slot.',
+    description: 'Baut einen Scanner fuer Slot 3 und erhoeht dessen Bestand um 1.',
     ingredients: [
       { amount: 100, element: 'hydrogen' },
       { amount: 100, element: 'lithium' },
       { amount: 100, element: 'boron' },
     ],
     item: 'scannerModule',
-    label: 'Scanner Module',
+    label: 'Scanner',
     slotIndex: 2,
   },
 ];
@@ -63,7 +63,12 @@ const craftingRecipeByItem: Record<InventoryItemKey, CraftingRecipe> = {
 };
 
 export function createInitialInventorySlots(): InventorySlotState[] {
-  return Array.from({ length: INVENTORY_SLOT_COUNT }, () => null);
+  return [...CRAFTING_RECIPES]
+    .sort((leftRecipe, rightRecipe) => leftRecipe.slotIndex - rightRecipe.slotIndex)
+    .map((recipe) => ({
+      count: 0,
+      item: recipe.item,
+    }));
 }
 
 export function getCraftingRecipe(item: InventoryItemKey) {
@@ -74,15 +79,15 @@ export function getInventoryItemLabel(item: InventoryItemKey) {
   return getCraftingRecipe(item).label;
 }
 
-export function canCraftItem(
-  resources: ResourceState,
-  inventorySlots: InventorySlotState[],
-  item: InventoryItemKey,
-) {
+export function getInventorySlot(inventorySlots: InventorySlotState[], item: InventoryItemKey) {
+  return inventorySlots.find((slot) => slot.item === item)!;
+}
+
+export function canCraftItem(resources: ResourceState, item: InventoryItemKey) {
   const recipe = getCraftingRecipe(item);
 
-  return (
-    inventorySlots[recipe.slotIndex] === null &&
-    recipe.ingredients.every((ingredient) => resources[ingredient.element] >= ingredient.amount)
-  );
+  return recipe.ingredients.every((ingredient) => {
+    const element = ingredient.element;
+    return resources[element] >= ingredient.amount;
+  });
 }

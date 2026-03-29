@@ -165,7 +165,7 @@ describe('gameReducer integration', () => {
       item: 'miningLaser',
     });
 
-    expect(nextState.inventorySlots[0]).toBe('miningLaser');
+    expect(nextState.inventorySlots[0]).toEqual({ count: 1, item: 'miningLaser' });
     expect(nextState.resources.sodium).toBe(0);
     expect(nextState.resources.magnesium).toBe(0);
     expect(nextState.resources.carbon).toBe(0);
@@ -268,11 +268,83 @@ describe('gameReducer integration', () => {
     });
   });
 
-  it('shows a placeholder notification when a crafted inventory item is pressed', () => {
+  it('uses a shield booster from inventory and restores shields', () => {
     const initialState = createInitialGameState();
     const missionState = {
       ...initialState,
-      inventorySlots: ['miningLaser', null, null, null, null, null, null, null, null],
+      inventorySlots: [
+        { count: 0, item: 'miningLaser' },
+        { count: 1, item: 'shieldBooster' },
+        { count: 0, item: 'scannerModule' },
+      ],
+      phase: 'mission' as const,
+      ship: {
+        ...initialState.ship,
+        shields: 60,
+      },
+    };
+
+    const nextState = gameReducer(missionState, {
+      type: 'inventory/itemPressed',
+      item: 'shieldBooster',
+    });
+
+    expect(nextState.ship.shields).toBe(80);
+    expect(nextState.inventorySlots[1].count).toBe(0);
+    expect(nextState.notification).toContain('Shield Booster used');
+  });
+
+  it('uses the scanner to discover one to three new mining destinations', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockImplementation(() => 0.5);
+    const initialState = createInitialGameState();
+    const missionState = {
+      ...initialState,
+      inventorySlots: [
+        { count: 0, item: 'miningLaser' },
+        { count: 0, item: 'shieldBooster' },
+        { count: 1, item: 'scannerModule' },
+      ],
+      phase: 'mission' as const,
+    };
+
+    const nextState = gameReducer(missionState, {
+      type: 'inventory/itemPressed',
+      item: 'scannerModule',
+    });
+
+    expect(nextState.discoveredLocations.length).toBeGreaterThanOrEqual(1);
+    expect(nextState.discoveredLocations.length).toBeLessThanOrEqual(3);
+    expect(nextState.inventorySlots[2].count).toBe(0);
+    expect(nextState.notification).toContain('Scanner ping complete');
+    randomSpy.mockRestore();
+  });
+
+  it('uses the mining laser on a discovered site, gains resources, and removes the location', () => {
+    const initialState = createInitialGameState();
+    const missionState = {
+      ...initialState,
+      currentLocation: 'scanner-site-1' as const,
+      discoveredLocations: [
+        {
+          anchor: 'Mars' as const,
+          color: '#f59e0b',
+          id: 'scanner-site-1' as const,
+          kind: 'oreDeposit' as const,
+          name: 'Erzvorkommen 1',
+          resourceYield: {
+            ...initialState.resources,
+            magnesium: 40,
+            sodium: 50,
+          },
+          x: 1.8,
+          y: 0.9,
+        },
+      ],
+      inventorySlots: [
+        { count: 1, item: 'miningLaser' },
+        { count: 0, item: 'shieldBooster' },
+        { count: 0, item: 'scannerModule' },
+      ],
       phase: 'mission' as const,
     };
 
@@ -281,6 +353,11 @@ describe('gameReducer integration', () => {
       item: 'miningLaser',
     });
 
-    expect(nextState.notification).toContain('Mining Laser is ready');
+    expect(nextState.currentLocation).toBe('Mars');
+    expect(nextState.discoveredLocations).toHaveLength(0);
+    expect(nextState.inventorySlots[0].count).toBe(0);
+    expect(nextState.resources.sodium).toBe(50);
+    expect(nextState.resources.magnesium).toBe(40);
+    expect(nextState.notification).toContain('depleted');
   });
 });

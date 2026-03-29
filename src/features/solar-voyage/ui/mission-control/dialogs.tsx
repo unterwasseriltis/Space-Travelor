@@ -3,7 +3,11 @@ import { DownloadIcon, Hammer, SettingsIcon, UploadIcon, XIcon } from 'lucide-re
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { canCraftItem, CRAFTING_RECIPES } from '@/features/solar-voyage/model/crafting';
+import {
+  canCraftItem,
+  CRAFTING_RECIPES,
+  getInventorySlot,
+} from '@/features/solar-voyage/model/crafting';
 import { ELEMENTS } from '@/features/solar-voyage/model/types';
 import type {
   ElementKey,
@@ -170,7 +174,8 @@ export function CraftingDialog({
 
         <div className="flex flex-col gap-3">
           {CRAFTING_RECIPES.map((recipe) => {
-            const isCraftable = canCraftItem(resources, inventorySlots, recipe.item);
+            const isCraftable = canCraftItem(resources, recipe.item);
+            const slotCount = getInventorySlot(inventorySlots, recipe.item).count;
 
             return (
               <div
@@ -183,25 +188,33 @@ export function CraftingDialog({
                       {recipe.label}
                     </h3>
                     <p className="mt-1 text-xs leading-5 text-slate-400">{recipe.description}</p>
+                    <p className="mt-2 text-[11px] tracking-[0.14em] text-slate-300 uppercase">
+                      Aktueller Bestand: {slotCount}
+                    </p>
                   </div>
                   <Badge className="bg-primary/15 text-primary">Slot {recipe.slotIndex + 1}</Badge>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 text-[11px] text-slate-300">
-                  {recipe.ingredients.map((ingredient) => (
-                    <div
-                      key={ingredient.element}
-                      className="border-border bg-background/55 rounded-xl border px-3 py-2 text-center"
-                    >
-                      <p className="text-accent font-bold">{ELEMENTS[ingredient.element].symbol}</p>
-                      <p className="mt-1 text-xs text-white">
-                        {resources[ingredient.element]} / {ingredient.amount}
-                      </p>
-                      <p className="mt-1 text-[10px] text-slate-400 uppercase">
-                        {ELEMENTS[ingredient.element].name}
-                      </p>
-                    </div>
-                  ))}
+                  {recipe.ingredients.map((ingredient) => {
+                    const element = ingredient.element;
+                    const elementMeta = ELEMENTS[element];
+
+                    return (
+                      <div
+                        key={element}
+                        className="border-border bg-background/55 rounded-xl border px-3 py-2 text-center"
+                      >
+                        <p className="text-accent font-bold">{elementMeta.symbol}</p>
+                        <p className="mt-1 text-xs text-white">
+                          {resources[element]} / {ingredient.amount}
+                        </p>
+                        <p className="mt-1 text-[10px] text-slate-400 uppercase">
+                          {elementMeta.name}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <Button
@@ -211,12 +224,49 @@ export function CraftingDialog({
                   type="button"
                   variant="secondary"
                 >
-                  Craft {recipe.label}
+                  Craft {recipe.label} +1
                 </Button>
               </div>
             );
           })}
         </div>
+      </div>
+    </div>
+  );
+}
+
+export function ArrivalDialog({
+  isOpen,
+  message,
+  onConfirm,
+}: {
+  isOpen: boolean;
+  message: string | null;
+  onConfirm: () => void;
+}) {
+  if (!isOpen || !message) {
+    return null;
+  }
+
+  return (
+    <div
+      aria-modal="true"
+      className="fixed inset-0 z-30 flex items-center justify-center bg-black/45 px-4 py-20 backdrop-blur-sm"
+      role="dialog"
+    >
+      <div className="glass-panel hud-outline w-full max-w-md rounded-[2rem] p-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+        <p className="text-primary text-xs font-bold tracking-[0.32em] uppercase">Arrival</p>
+        <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl tracking-[0.12em] text-white uppercase">
+          Ziel erreicht
+        </h2>
+        <p className="mt-4 text-base leading-7 text-slate-200">{message}</p>
+        <Button
+          className="mt-6 h-11 min-w-28 tracking-[0.18em] uppercase"
+          onClick={onConfirm}
+          type="button"
+        >
+          Ok.
+        </Button>
       </div>
     </div>
   );

@@ -1,23 +1,29 @@
 import { KM_PER_AU, calculateDistanceAu } from '@/features/solar-voyage/domain/solar-system';
-import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
+import type { BodyName, Coordinates } from '@/features/solar-voyage/domain/solar-system';
 import { calculateRequiredFuel } from '@/features/solar-voyage/model/equipment';
 import { ELEMENTS } from '@/features/solar-voyage/model/types';
 import type { ElementKey, ResourceState } from '@/features/solar-voyage/model/types';
 
 const BASE_RESOURCE_REWARD_PER_SECOND = 1;
 
-export function calculateTravelDurationSeconds(from: BodyName, to: BodyName) {
+export function calculateTravelDurationSeconds(
+  from: BodyName | Coordinates,
+  to: BodyName | Coordinates,
+) {
   const distanceAu = calculateDistanceAu(from, to);
   const minutes = Math.max(1, Math.round(distanceAu * 16));
 
   return minutes * 60;
 }
 
-export function calculateTravelDistanceKm(from: BodyName, to: BodyName) {
+export function calculateTravelDistanceKm(
+  from: BodyName | Coordinates,
+  to: BodyName | Coordinates,
+) {
   return calculateDistanceAu(from, to) * KM_PER_AU;
 }
 
-export function calculateTravelFuelCost(from: BodyName, to: BodyName) {
+export function calculateTravelFuelCost(from: BodyName | Coordinates, to: BodyName | Coordinates) {
   return calculateRequiredFuel(calculateTravelDurationSeconds(from, to));
 }
 

@@ -132,18 +132,24 @@ describe('MissionControl component', () => {
     expect(
       screen.getByRole('button', { name: /mining laser inventory item/i }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/mining laser crafted and moved to inventory slot 1\./i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/slot 1 stock increased to 1/i)).toBeInTheDocument();
   });
 
-  it('shows a placeholder notification when a crafted inventory item is clicked', async () => {
+  it('uses a crafted shield booster from inventory', async () => {
     const user = userEvent.setup();
     const initialState = createInitialGameState();
     const savedState = {
       ...initialState,
-      inventorySlots: ['miningLaser', null, null, null, null, null, null, null, null],
+      inventorySlots: [
+        { count: 0, item: 'miningLaser' },
+        { count: 1, item: 'shieldBooster' },
+        { count: 0, item: 'scannerModule' },
+      ],
       phase: 'mission' as const,
+      ship: {
+        ...initialState.ship,
+        shields: 70,
+      },
     };
 
     localStorage.setItem(GAME_STATE_STORAGE_KEY, serializeGameStateSnapshot(savedState));
@@ -151,11 +157,10 @@ describe('MissionControl component', () => {
     render(<MissionControl backgroundImage="/background.jpg" />);
 
     await user.click(screen.getByRole('button', { name: /load mission/i }));
-    await user.click(screen.getByRole('button', { name: /mining laser inventory item/i }));
+    await user.click(screen.getByRole('button', { name: /shield booster inventory item/i }));
 
-    expect(
-      screen.getByText(/mining laser is ready, but its action is not implemented yet\./i),
-    ).toBeInTheDocument();
+    expect(screen.getByText('90%')).toBeInTheDocument();
+    expect(screen.getByText(/shield booster used/i)).toBeInTheDocument();
   });
 
   it('exports the current mission snapshot from the settings dialog', async () => {
@@ -239,4 +244,23 @@ describe('MissionControl component', () => {
     expect(savedSnapshot).toBeTruthy();
     expect(restoredSnapshot.missionElapsedSeconds).toBeGreaterThanOrEqual(5);
   }, 10000);
+
+  it('opens an arrival dialog when the ship reaches its destination', () => {
+    vi.useFakeTimers();
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /new mission/i }));
+    fireEvent.click(screen.getByRole('button', { name: /accelerate/i }));
+
+    act(() => {
+      vi.advanceTimersByTime(60000);
+    });
+
+    expect(screen.getByText(/willkommen auf dem mond\./i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^ok\.$/i }));
+
+    expect(screen.queryByText(/willkommen auf dem mond\./i)).not.toBeInTheDocument();
+  });
 });

@@ -4,6 +4,12 @@ import {
   calculateTravelFuelCost,
   calculateTravelRewards,
 } from '@/features/solar-voyage/domain/travel';
+import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
+import {
+  canCraftItem,
+  getCraftingRecipe,
+  getInventorySlot,
+} from '@/features/solar-voyage/model/crafting';
 import {
   applyEquipmentEffect,
   drainFuel,
@@ -13,19 +19,28 @@ import {
   syncEquipmentSlotsWithResources,
 } from '@/features/solar-voyage/model/equipment';
 import {
-  canCraftItem,
-  getCraftingRecipe,
-  getInventoryItemLabel,
-} from '@/features/solar-voyage/model/crafting';
-import {
   createInitialGameState,
   createInitialResources,
   getInitialDestination,
 } from '@/features/solar-voyage/model/game-state';
+import {
+  createScannerDiscoveries,
+  getLocationArrivalMessage,
+  getLocationCoordinates,
+  getLocationLabel,
+  isBodyName,
+} from '@/features/solar-voyage/model/locations';
 import { ELEMENTS } from '@/features/solar-voyage/model/types';
-import type { ElementKey, GameAction, GameState } from '@/features/solar-voyage/model/types';
+import type {
+  ElementKey,
+  GameAction,
+  GameState,
+  InventoryItemKey,
+  ResourceState,
+} from '@/features/solar-voyage/model/types';
 
 const FUEL_DEPLETED_NOTIFICATION = 'Fuel depleted. Recharge the hydrogen slot to resume travel.';
+const SHIELD_BOOST_AMOUNT = 20;
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -72,10 +87,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         };
       }
 
-      const requiredFuel = calculateTravelFuelCost(
-        state.currentLocation,
-        state.selectedDestination,
-      );
+      const currentCoordinates = getLocationCoordinates(state, state.currentLocation);
+      const destinationCoordinates = getLocationCoordinates(state, state.selectedDestination);
+      const requiredFuel = calculateTravelFuelCost(currentCoordinates, destinationCoordinates);
+      const destinationLabel = getLocationLabel(state, state.selectedDestination);
 
       if (state.ship.fuel < requiredFuel) {
         return {
@@ -85,19 +100,20 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       const durationSeconds = calculateTravelDurationSeconds(
-        state.currentLocation,
-        state.selectedDestination,
+        currentCoordinates,
+        destinationCoordinates,
       );
 
       return {
         ...state,
-        notification: `Travel to ${state.selectedDestination} started.`,
+        arrivalDialog: null,
+        notification: `Travel to ${destinationLabel} started.`,
         travel: {
           origin: state.currentLocation,
           target: state.selectedDestination,
           totalSeconds: durationSeconds,
           remainingSeconds: durationSeconds,
-          distanceKm: calculateTravelDistanceKm(state.currentLocation, state.selectedDestination),
+          distanceKm: calculateTravelDistanceKm(currentCoordinates, destinationCoordinates),
           earnedResources: createInitialResources(),
         },
       };
@@ -135,7 +151,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const elapsedSeconds = state.travel.totalSeconds - remainingSeconds;
       const nextRewards = calculateTravelRewards(elapsedSeconds);
-
       const updatedResources = { ...state.resources };
       const nextEarnedResources = { ...state.travel.earnedResources };
 
@@ -148,6 +163,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         updatedResources[elementKey] += delta;
         nextEarnedResources[elementKey] = nextRewards[elementKey];
       });
+
       const updatedEquipmentSlots = syncEquipmentSlotsWithResources(
         state.equipmentSlots,
         updatedResources,
@@ -155,18 +171,26 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       if (remainingSeconds === 0) {
         const nextLocation = state.travel.target;
+        const nextLocationLabel = getLocationLabel(state, nextLocation);
+        const nextSelectedDestination = isBodyName(nextLocation)
+          ? getInitialDestination(nextLocation)
+          : '';
+
         return {
           ...state,
+          arrivalDialog: {
+            message: getLocationArrivalMessage(state, nextLocation),
+          },
           currentLocation: nextLocation,
-          selectedDestination: getInitialDestination(nextLocation),
-          resources: updatedResources,
           equipmentSlots: updatedEquipmentSlots,
-          travel: null,
-          notification: `Arrival confirmed. Welcome to ${nextLocation}.`,
+          notification: `Arrival confirmed. ${nextLocationLabel} reached.`,
+          resources: updatedResources,
+          selectedDestination: nextSelectedDestination,
           ship: {
             ...state.ship,
             fuel: remainingFuel,
           },
+          travel: null,
         };
       }
 
@@ -236,10 +260,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'crafting/itemCrafted': {
-      if (
-        state.phase !== 'mission' ||
-        !canCraftItem(state.resources, state.inventorySlots, action.item)
-      ) {
+      if (state.phase !== 'mission' || !canCraftItem(state.resources, action.item)) {
         return state;
       }
 
@@ -247,24 +268,30 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const nextResources = { ...state.resources };
 
       recipe.ingredients.forEach((ingredient) => {
-        nextResources[ingredient.element] -= ingredient.amount;
+        const element = ingredient.element;
+        nextResources[element] -= ingredient.amount;
       });
 
-      const nextInventorySlots = [...state.inventorySlots];
-      nextInventorySlots[recipe.slotIndex] = action.item;
+      const nextInventorySlots = state.inventorySlots.map((slot) =>
+        slot.item === action.item ? { ...slot, count: slot.count + 1 } : slot,
+      );
+      const nextSlotCount = getInventorySlot(nextInventorySlots, action.item).count;
 
       return {
         ...state,
         inventorySlots: nextInventorySlots,
-        notification: `${recipe.label} crafted and moved to inventory slot ${recipe.slotIndex + 1}.`,
+        notification: `${recipe.label} crafted. Slot ${recipe.slotIndex + 1} stock increased to ${nextSlotCount}.`,
         resources: nextResources,
       };
     }
 
     case 'inventory/itemPressed':
+      return handleInventoryItemPressed(state, action.item);
+
+    case 'arrivalDialog/cleared':
       return {
         ...state,
-        notification: `${getInventoryItemLabel(action.item)} is ready, but its action is not implemented yet.`,
+        arrivalDialog: null,
       };
 
     case 'notification/cleared':
@@ -276,4 +303,110 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     default:
       return state;
   }
+}
+
+function handleInventoryItemPressed(state: GameState, item: InventoryItemKey): GameState {
+  if (state.phase !== 'mission') {
+    return state;
+  }
+
+  const selectedSlot = getInventorySlot(state.inventorySlots, item);
+
+  if (selectedSlot.count <= 0) {
+    return state;
+  }
+
+  switch (item) {
+    case 'miningLaser':
+      return activateMiningLaser(state);
+
+    case 'shieldBooster':
+      return consumeInventoryItem(state, item, {
+        notification: `Shield Booster used. Shields +${SHIELD_BOOST_AMOUNT}%`,
+        ship: {
+          ...state.ship,
+          shields: Math.min(100, state.ship.shields + SHIELD_BOOST_AMOUNT),
+        },
+      });
+
+    case 'scannerModule': {
+      const discoveries = createScannerDiscoveries(state);
+
+      return consumeInventoryItem(state, item, {
+        discoveredLocations: [...state.discoveredLocations, ...discoveries],
+        nextScannerDiscoveryId: state.nextScannerDiscoveryId + discoveries.length,
+        notification: `Scanner ping complete. ${discoveries.length} neue Ziele entdeckt.`,
+      });
+    }
+
+    default:
+      return state;
+  }
+}
+
+function activateMiningLaser(state: GameState): GameState {
+  if (isBodyName(state.currentLocation)) {
+    return {
+      ...state,
+      notification: 'No raw ore deposit is available at the current location.',
+    };
+  }
+
+  const targetDiscovery = state.discoveredLocations.find(
+    (location) => location.id === state.currentLocation,
+  );
+
+  if (!targetDiscovery) {
+    return {
+      ...state,
+      notification: 'No raw ore deposit is available at the current location.',
+    };
+  }
+
+  const nextResources = applyResourceYield(state.resources, targetDiscovery.resourceYield);
+  const nextEquipmentSlots = syncEquipmentSlotsWithResources(state.equipmentSlots, nextResources);
+  const remainingDiscoveries = state.discoveredLocations.filter(
+    (location) => location.id !== targetDiscovery.id,
+  );
+  const fallbackLocation: BodyName = targetDiscovery.anchor;
+
+  return consumeInventoryItem(
+    {
+      ...state,
+      currentLocation: fallbackLocation,
+      discoveredLocations: remainingDiscoveries,
+      equipmentSlots: nextEquipmentSlots,
+      resources: nextResources,
+      selectedDestination: getInitialDestination(fallbackLocation),
+    },
+    'miningLaser',
+    {
+      notification: `Mining Laser extracted raw ore from ${targetDiscovery.name}. The site has been depleted.`,
+    },
+  );
+}
+
+function consumeInventoryItem(
+  state: GameState,
+  item: InventoryItemKey,
+  updates: Partial<GameState>,
+): GameState {
+  return {
+    ...state,
+    ...updates,
+    inventorySlots: state.inventorySlots.map((slot) =>
+      slot.item === item ? { ...slot, count: Math.max(0, slot.count - 1) } : slot,
+    ),
+  };
+}
+
+function applyResourceYield(resources: ResourceState, reward: ResourceState) {
+  const nextResources = { ...resources };
+
+  Object.keys(reward).forEach((key) => {
+    const elementKey = key as ElementKey;
+    nextResources[elementKey] += reward[elementKey];
+  });
+
+  return nextResources;
 }

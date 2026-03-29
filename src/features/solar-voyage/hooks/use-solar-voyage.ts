@@ -1,5 +1,4 @@
 import { useEffect, useReducer, useRef } from 'react';
-import type { BodyName } from '@/features/solar-voyage/domain/solar-system';
 
 import { gameReducer } from '@/features/solar-voyage/model/game-reducer';
 import {
@@ -12,12 +11,14 @@ import { createInitialGameState } from '@/features/solar-voyage/model/game-state
 import {
   getAvailableDestinations,
   getCurrentCoordinatesLabel,
+  getCurrentLocationLabel,
   getCurrentPosition,
+  getMapMarkers,
   getMissionTimerLabel,
   getTravelCountdownLabel,
   getTravelProgress,
 } from '@/features/solar-voyage/model/selectors';
-import type { ElementKey, InventoryItemKey } from '@/features/solar-voyage/model/types';
+import type { ElementKey, InventoryItemKey, LocationId } from '@/features/solar-voyage/model/types';
 
 export function useSolarVoyage() {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);
@@ -108,14 +109,16 @@ export function useSolarVoyage() {
   return {
     state,
     hasSavedMission,
-    availableDestinations: getAvailableDestinations(state.currentLocation),
+    availableDestinations: getAvailableDestinations(state),
     coordinatesLabel: getCurrentCoordinatesLabel(state),
+    currentLocationLabel: getCurrentLocationLabel(state),
     missionTimerLabel: getMissionTimerLabel(state),
     travelCountdownLabel: getTravelCountdownLabel(state),
     travelProgress: getTravelProgress(state),
     currentPosition: getCurrentPosition(state),
+    mapLocations: getMapMarkers(state),
     startMission: () => dispatch({ type: 'mission/started' }),
-    selectDestination: (destination: BodyName | '') =>
+    selectDestination: (destination: LocationId | '') =>
       dispatch({ type: 'destination/selected', destination }),
     startTravel: () => dispatch({ type: 'travel/started' }),
     activateEquipmentSlot: (element: ElementKey) =>
@@ -124,6 +127,7 @@ export function useSolarVoyage() {
       dispatch({ type: 'crafting/itemCrafted', item }),
     pressInventoryItem: (item: InventoryItemKey) =>
       dispatch({ type: 'inventory/itemPressed', item }),
+    clearArrivalDialog: () => dispatch({ type: 'arrivalDialog/cleared' }),
     clearNotification: () => dispatch({ type: 'notification/cleared' }),
     exportSnapshot: () => serializeGameStateSnapshot(state),
     importSnapshot: (rawSnapshot: string) => restoreState('import', rawSnapshot),
