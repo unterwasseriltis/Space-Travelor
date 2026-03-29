@@ -25,6 +25,7 @@ describe('MissionControl component', () => {
 
     expect(screen.getByText(/navigation/i)).toBeInTheDocument();
     expect(screen.getByText(/current coordinates/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /mute audio/i })).toBeInTheDocument();
   });
 
   it('starts a trip and shows the transit countdown', async () => {
@@ -273,10 +274,28 @@ describe('MissionControl component', () => {
     });
 
     expect(screen.getByText(/willkommen auf dem mond\./i)).toBeInTheDocument();
+    expect(screen.getByText(/mond colony/i)).toBeInTheDocument();
+    expect(screen.getByText(/the colony has opened its docks/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/colony liaison placeholder for mond/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/arrival vista placeholder for mond/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /^ok\.$/i }));
 
     expect(screen.queryByText(/willkommen auf dem mond\./i)).not.toBeInTheDocument();
+  });
+
+  it('toggles the speaker button state', async () => {
+    const user = userEvent.setup();
+
+    render(<MissionControl backgroundImage="/background.jpg" />);
+
+    const muteButton = screen.getByRole('button', { name: /mute audio/i });
+
+    await user.click(muteButton);
+    expect(screen.getByRole('button', { name: /unmute audio/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /unmute audio/i }));
+    expect(screen.getByRole('button', { name: /mute audio/i })).toBeInTheDocument();
   });
 
   it('can abort a trip and keeps the ship at its current coordinates', () => {

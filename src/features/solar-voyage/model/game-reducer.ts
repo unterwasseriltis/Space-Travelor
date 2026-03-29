@@ -340,6 +340,8 @@ function tickTravel(state: GameState): GameState {
     return {
       ...state,
       arrivalDialog: {
+        label: nextLocationLabel,
+        locationId: nextLocation,
         message: getLocationArrivalMessage(state, nextLocation),
       },
       currentCoordinatesOverride: null,

@@ -14,6 +14,7 @@ import type { LocationOption, MapLocation } from '@/features/solar-voyage/model/
 import { formatFuelValue } from '@/features/solar-voyage/model/equipment';
 import type {
   ElementKey,
+  ArrivalDialogState,
   EquipmentSlotState,
   InventoryItemKey,
   InventorySlotState,
@@ -35,10 +36,12 @@ import {
 } from '@/features/solar-voyage/ui/mission-control/panels';
 import {
   ArrivalDialog,
+  AudioToggleButton,
   CraftingDialog,
   SettingsButton,
   SettingsDialog,
 } from '@/features/solar-voyage/ui/mission-control/dialogs';
+import { useTransitHum } from '@/features/solar-voyage/ui/mission-control/use-transit-hum';
 import {
   useMissionViewportLayout,
   type MissionViewportLayout,
@@ -80,9 +83,15 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
   const clearNotificationEvent = useEffectEvent(clearNotification);
   const missionViewportLayout = useMissionViewportLayout();
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [isCraftingOpen, setIsCraftingOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
+
+  useTransitHum({
+    isMuted: isAudioMuted,
+    isPlaying: state.phase === 'mission' && state.travel?.status === 'active',
+  });
 
   useEffect(() => {
     if (!state.notification) {
@@ -182,12 +191,14 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       onStartMission={startMission}
       onCloseSettings={() => setIsSettingsOpen(false)}
       onToggleSettings={() => setIsSettingsOpen((currentOpen) => !currentOpen)}
+      onToggleAudio={() => setIsAudioMuted((currentMuted) => !currentMuted)}
+      isAudioMuted={isAudioMuted}
       settingsMessage={settingsMessage}
     />
   ) : (
     <MissionWorkspace
       activateEquipmentSlot={activateEquipmentSlot}
-      arrivalDialogMessage={state.arrivalDialog?.message ?? null}
+      arrivalDialog={state.arrivalDialog}
       availableDestinations={availableDestinations}
       backgroundImage={backgroundImage}
       coordinatesLabel={coordinatesLabel}
@@ -217,6 +228,7 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       onSelectDestination={selectDestination}
       onStartTravel={startTravel}
       onAbortTravel={abortTravel}
+      onToggleAudio={() => setIsAudioMuted((currentMuted) => !currentMuted)}
       onToggleCrafting={() => setIsCraftingOpen((currentOpen) => !currentOpen)}
       onToggleSettings={() => setIsSettingsOpen((currentOpen) => !currentOpen)}
       resources={state.resources}
@@ -230,6 +242,7 @@ export function MissionControl({ backgroundImage }: MissionControlProps) {
       travelCountdownLabel={travelCountdownLabel}
       travelProgress={travelProgress}
       travelStatus={travelStatus}
+      isAudioMuted={isAudioMuted}
     />
   );
 }
@@ -238,12 +251,14 @@ function LaunchMenu({
   backgroundImage,
   hasSavedMission,
   importInputRef,
+  isAudioMuted,
   isSettingsOpen,
   onExport,
   onImport,
   onImportChange,
   onLoadMission,
   onStartMission,
+  onToggleAudio,
   onToggleSettings,
   settingsMessage,
   onCloseSettings,
@@ -251,12 +266,14 @@ function LaunchMenu({
   backgroundImage: string;
   hasSavedMission: boolean;
   importInputRef: RefObject<HTMLInputElement | null>;
+  isAudioMuted: boolean;
   isSettingsOpen: boolean;
   onExport: () => Promise<void>;
   onImport: () => void;
   onImportChange: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
   onLoadMission: () => boolean;
   onStartMission: () => void;
+  onToggleAudio: () => void;
   onToggleSettings: () => void;
   settingsMessage: string | null;
   onCloseSettings: () => void;
@@ -270,7 +287,10 @@ function LaunchMenu({
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,6,17,0.92)_0%,rgba(3,6,17,0.6)_42%,rgba(3,6,17,0.1)_100%)]" />
 
       <div className="starfield fixed inset-0 opacity-40" />
-      <SettingsButton onClick={onToggleSettings} />
+      <div className="fixed top-6 right-6 z-40 flex items-center gap-3">
+        <AudioToggleButton isMuted={isAudioMuted} onClick={onToggleAudio} />
+        <SettingsButton onClick={onToggleSettings} />
+      </div>
       <SettingsDialog
         isOpen={isSettingsOpen}
         canExport={false}
@@ -349,7 +369,7 @@ function LaunchMenu({
 
 function MissionWorkspace({
   activateEquipmentSlot,
-  arrivalDialogMessage,
+  arrivalDialog,
   availableDestinations,
   backgroundImage,
   coordinatesLabel,
@@ -377,6 +397,7 @@ function MissionWorkspace({
   onSelectDestination,
   onStartTravel,
   onAbortTravel,
+  onToggleAudio,
   onToggleCrafting,
   onToggleSettings,
   resources,
@@ -390,9 +411,10 @@ function MissionWorkspace({
   travelCountdownLabel,
   travelProgress,
   travelStatus,
+  isAudioMuted,
 }: {
   activateEquipmentSlot: (element: ElementKey) => void;
-  arrivalDialogMessage: string | null;
+  arrivalDialog: ArrivalDialogState;
   availableDestinations: LocationOption[];
   backgroundImage: string;
   coordinatesLabel: string;
@@ -420,6 +442,7 @@ function MissionWorkspace({
   onSelectDestination: (destination: LocationId | '') => void;
   onStartTravel: () => void;
   onAbortTravel: () => void;
+  onToggleAudio: () => void;
   onToggleCrafting: () => void;
   onToggleSettings: () => void;
   resources: ResourceState;
@@ -433,6 +456,7 @@ function MissionWorkspace({
   travelCountdownLabel: string | null;
   travelProgress: number;
   travelStatus: TravelStatus | null;
+  isAudioMuted: boolean;
 }) {
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-[#030611]">
@@ -442,7 +466,10 @@ function MissionWorkspace({
       />
       <div className="fixed inset-0 bg-[linear-gradient(180deg,rgba(3,6,17,0.3)_0%,rgba(3,6,17,0.7)_100%)]" />
       <div className="starfield fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(4,7,17,0.08),rgba(4,7,17,0.35))]" />
-      <SettingsButton onClick={onToggleSettings} />
+      <div className="fixed top-6 right-6 z-40 flex items-center gap-3">
+        <AudioToggleButton isMuted={isAudioMuted} onClick={onToggleAudio} />
+        <SettingsButton onClick={onToggleSettings} />
+      </div>
       <SettingsDialog
         isOpen={isSettingsOpen}
         canExport
@@ -457,8 +484,8 @@ function MissionWorkspace({
         local storage in sync every 5 seconds.
       </SettingsDialog>
       <ArrivalDialog
-        isOpen={Boolean(arrivalDialogMessage)}
-        message={arrivalDialogMessage}
+        arrivalDialog={arrivalDialog}
+        isOpen={Boolean(arrivalDialog)}
         onConfirm={onClearArrivalDialog}
       />
       <CraftingDialog

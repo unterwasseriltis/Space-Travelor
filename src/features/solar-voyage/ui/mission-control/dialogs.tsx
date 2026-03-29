@@ -1,5 +1,13 @@
 import type { ReactNode } from 'react';
-import { DownloadIcon, Hammer, SettingsIcon, UploadIcon, XIcon } from 'lucide-react';
+import {
+  DownloadIcon,
+  Hammer,
+  SettingsIcon,
+  UploadIcon,
+  Volume2Icon,
+  VolumeXIcon,
+  XIcon,
+} from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,16 +18,38 @@ import {
 } from '@/features/solar-voyage/model/crafting';
 import { ELEMENTS } from '@/features/solar-voyage/model/types';
 import type {
+  ArrivalDialogState,
   ElementKey,
   InventoryItemKey,
   InventorySlotState,
 } from '@/features/solar-voyage/model/types';
+import { getArrivalVisuals } from '@/features/solar-voyage/ui/mission-control/arrival-visuals';
+
+export function AudioToggleButton({ isMuted, onClick }: { isMuted: boolean; onClick: () => void }) {
+  return (
+    <Button
+      aria-label={isMuted ? 'Unmute audio' : 'Mute audio'}
+      aria-pressed={isMuted}
+      className="size-12 rounded-full border border-white/10 bg-slate-950/75 shadow-[0_0_25px_rgba(3,6,17,0.4)] backdrop-blur-md hover:bg-slate-900/90"
+      onClick={onClick}
+      size="icon-lg"
+      type="button"
+      variant="outline"
+    >
+      {isMuted ? (
+        <VolumeXIcon className="text-primary size-5" />
+      ) : (
+        <Volume2Icon className="text-primary size-5" />
+      )}
+    </Button>
+  );
+}
 
 export function SettingsButton({ onClick }: { onClick: () => void }) {
   return (
     <Button
       aria-label="Open settings"
-      className="fixed top-6 right-6 z-40 size-12 rounded-full border border-white/10 bg-slate-950/75 shadow-[0_0_25px_rgba(3,6,17,0.4)] backdrop-blur-md hover:bg-slate-900/90"
+      className="size-12 rounded-full border border-white/10 bg-slate-950/75 shadow-[0_0_25px_rgba(3,6,17,0.4)] backdrop-blur-md hover:bg-slate-900/90"
       onClick={onClick}
       size="icon-lg"
       type="button"
@@ -236,17 +266,19 @@ export function CraftingDialog({
 }
 
 export function ArrivalDialog({
+  arrivalDialog,
   isOpen,
-  message,
   onConfirm,
 }: {
+  arrivalDialog: ArrivalDialogState;
   isOpen: boolean;
-  message: string | null;
   onConfirm: () => void;
 }) {
-  if (!isOpen || !message) {
+  if (!isOpen || !arrivalDialog) {
     return null;
   }
+
+  const visuals = getArrivalVisuals(arrivalDialog);
 
   return (
     <div
@@ -254,19 +286,76 @@ export function ArrivalDialog({
       className="fixed inset-0 z-30 flex items-center justify-center bg-black/45 px-4 py-20 backdrop-blur-sm"
       role="dialog"
     >
-      <div className="glass-panel hud-outline w-full max-w-md rounded-[2rem] p-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
-        <p className="text-primary text-xs font-bold tracking-[0.32em] uppercase">Arrival</p>
-        <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl tracking-[0.12em] text-white uppercase">
-          Ziel erreicht
-        </h2>
-        <p className="mt-4 text-base leading-7 text-slate-200">{message}</p>
-        <Button
-          className="mt-6 h-11 min-w-28 tracking-[0.18em] uppercase"
-          onClick={onConfirm}
-          type="button"
-        >
-          Ok.
-        </Button>
+      <div className="glass-panel hud-outline w-full max-w-5xl rounded-[2rem] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+        <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
+          <section className="border-border bg-muted/30 flex flex-col gap-4 rounded-[1.75rem] border p-4">
+            <div className="overflow-hidden rounded-[1.4rem] border border-white/10 bg-slate-950/60">
+              <img
+                alt={visuals.portraitAlt}
+                className="aspect-[4/5] h-full w-full object-cover"
+                src={visuals.portraitSrc}
+              />
+            </div>
+            <div className="space-y-3">
+              <Badge className="bg-primary/15 text-primary w-fit">{visuals.portraitLabel}</Badge>
+              <p className="text-sm leading-6 text-slate-200">{visuals.greeting}</p>
+              <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
+                Placeholder portrait for future generated colony contact art.
+              </p>
+            </div>
+          </section>
+
+          <section className="border-border bg-muted/25 flex min-w-0 flex-col gap-5 rounded-[1.75rem] border p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-primary text-xs font-bold tracking-[0.32em] uppercase">
+                  Arrival
+                </p>
+                <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl tracking-[0.12em] text-white uppercase">
+                  {visuals.title}
+                </h2>
+              </div>
+              <Badge className="bg-accent/15 text-accent h-fit w-fit">{visuals.statusLabel}</Badge>
+            </div>
+
+            <div className="overflow-hidden rounded-[1.4rem] border border-white/10 bg-slate-950/60">
+              <img
+                alt={visuals.sceneAlt}
+                className="aspect-[16/9] h-full w-full object-cover"
+                src={visuals.sceneSrc}
+              />
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_220px]">
+              <div className="space-y-3">
+                <p className="text-base leading-7 text-slate-100">{arrivalDialog.message}</p>
+                <p className="text-sm leading-6 text-slate-300">
+                  Civil channels are active and local traffic control has already acknowledged the
+                  Solar Voyage on approach.
+                </p>
+              </div>
+              <div className="border-border bg-background/40 rounded-[1.25rem] border p-4">
+                <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase">
+                  {visuals.sceneLabel}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  Placeholder vista for the destination surface, orbital settlement, or docking
+                  corridor.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                className="h-11 min-w-28 tracking-[0.18em] uppercase"
+                onClick={onConfirm}
+                type="button"
+              >
+                Ok.
+              </Button>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );
